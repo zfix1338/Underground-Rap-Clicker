@@ -1,5 +1,6 @@
 // models.dart
-// 
+// Определение моделей данных
+
 class UpgradeItem {
   String title;
   String type; // 'click' или 'passive'

@@ -1,5 +1,4 @@
 // music_screen.dart
-// 
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:underground_rap_clicker/models.dart';
@@ -32,7 +31,7 @@ class _MusicScreenState extends State<MusicScreen> {
   @override
   void initState() {
     super.initState();
-    // Устанавливаем режим, при котором плеер останавливается после завершения воспроизведения.
+    // Устанавливаем режим: по окончании воспроизведения плеер останавливается.
     _audioPlayer.setReleaseMode(ReleaseMode.stop);
     _playerCompleteSubscription = _audioPlayer.onPlayerComplete.listen((_) {
       setState(() {
@@ -44,7 +43,7 @@ class _MusicScreenState extends State<MusicScreen> {
       widget.onTrackUpdate();
     });
     _playerStateSubscription = _audioPlayer.onPlayerStateChanged.listen((state) {
-      // Здесь можно обновлять UI при изменении состояния плеера
+      // Здесь можно обновлять UI, если требуется
     });
   }
 
@@ -56,8 +55,9 @@ class _MusicScreenState extends State<MusicScreen> {
     super.dispose();
   }
 
-  // Метод загрузки трека: после успешной загрузки трек сразу начинает воспроизводиться.
-  void _uploadTrack(int index) async {
+  // Новая функция для загрузки трека.
+  // После успешной покупки сразу запускается воспроизведение.
+  Future<void> _uploadTrack(int index) async {
     final track = widget.tracks[index];
     if (widget.monthlyListeners >= track.cost) {
       widget.onSpend(track.cost);
@@ -65,8 +65,8 @@ class _MusicScreenState extends State<MusicScreen> {
         track.isUploaded = true;
       });
       widget.onTrackUpdate();
-      // Автоматически запускаем воспроизведение после загрузки.
-      await _togglePlayPause(index);
+      // Запускаем воспроизведение после загрузки
+      await _startTrackPlayback(index);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Not enough listeners to upload track')),
@@ -74,7 +74,35 @@ class _MusicScreenState extends State<MusicScreen> {
     }
   }
 
-  // Метод для переключения между воспроизведением и паузой
+  // Новая вспомогательная функция для воспроизведения трека.
+  Future<void> _startTrackPlayback(int index) async {
+    final track = widget.tracks[index];
+    if (!track.isUploaded) return;
+
+    // Если какой-то другой трек уже играет, останавливаем его
+    if (_currentPlayingIndex != -1 && _currentPlayingIndex != index) {
+      widget.tracks[_currentPlayingIndex].isPlaying = false;
+      await _audioPlayer.stop();
+    }
+
+    try {
+      // Устанавливаем источник трека и запускаем воспроизведение
+      await _audioPlayer.setSource(AssetSource(track.audioFile));
+      // Небольшая задержка для стабильной работы
+      await Future.delayed(const Duration(milliseconds: 100));
+      await _audioPlayer.resume();
+    } catch (e) {
+      print("Error starting playback: $e");
+    }
+
+    setState(() {
+      track.isPlaying = true;
+      _currentPlayingIndex = index;
+    });
+    widget.onTrackUpdate();
+  }
+
+  // Функция для переключения воспроизведения/паузы.
   Future<void> _togglePlayPause(int index) async {
     final track = widget.tracks[index];
     if (!track.isUploaded) return;
@@ -87,27 +115,17 @@ class _MusicScreenState extends State<MusicScreen> {
       widget.onTrackUpdate();
       return;
     }
-
-    if (_currentPlayingIndex != -1 && _currentPlayingIndex != index) {
-      widget.tracks[_currentPlayingIndex].isPlaying = false;
-      await _audioPlayer.stop();
-    }
-
-    // Воспроизводим аудиофайл через AssetSource, используя правильный путь.
-    await _audioPlayer.play(AssetSource(track.audioFile));
-
-    setState(() {
-      track.isPlaying = true;
-      _currentPlayingIndex = index;
-    });
-    widget.onTrackUpdate();
+    await _startTrackPlayback(index);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[850],
-      appBar: AppBar(title: const Text('Music'), backgroundColor: Colors.black),
+      appBar: AppBar(
+        title: const Text('Music'),
+        backgroundColor: Colors.black,
+      ),
       body: ListView.builder(
         itemCount: widget.tracks.length,
         itemBuilder: (context, index) {

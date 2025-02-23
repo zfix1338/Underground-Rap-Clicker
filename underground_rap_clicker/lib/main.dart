@@ -1,5 +1,4 @@
 // main.dart
-// 
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -14,6 +13,7 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -26,15 +26,18 @@ class MyApp extends StatelessWidget {
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
+
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
+  // Параметры кликера
   int monthlyListeners = 0;
   int baseListenersPerClick = 1;
   int passiveListenersPerSecond = 0;
 
+  // Список апгрейдов
   List<UpgradeItem> upgrades = [
     UpgradeItem(
       title: 'Make New Beat',
@@ -66,14 +69,15 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     ),
   ];
 
-  // Обратите внимание: аудиофайл теперь задан с правильным относительным путём.
+  // Обратите внимание: стоимость трека снижена до 10
+  // Убедитесь, что аудиофайл (blonde.mp3) находится в assets/audio/
   List<Track> tracks = [
     Track(
       title: 'Blonde',
       artist: 'osamason',
       duration: '2:24',
-      cost: 1000,
-      audioFile: 'audio/blonde.mp3', // Файл должен находиться в assets/audio и быть указан в pubspec.yaml
+      cost: 10,
+      audioFile: 'blonde.mp3', // файл должен лежать в assets/audio/
       coverAsset: 'assets/images/blonde_cover.png',
     ),
   ];
@@ -115,7 +119,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     setState(() {
       monthlyListeners = _prefs.getInt('monthlyListeners') ?? 0;
       baseListenersPerClick = _prefs.getInt('baseListenersPerClick') ?? 1;
-      passiveListenersPerSecond = _prefs.getInt('passiveListenersPerSecond') ?? 0;
+      passiveListenersPerSecond =
+          _prefs.getInt('passiveListenersPerSecond') ?? 0;
 
       String? upgradesJson = _prefs.getString('upgrades');
       if (upgradesJson != null) {
@@ -188,6 +193,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
+  // Вызывается из MusicScreen для обновления состояния (сохранения треков)
   void _updateTracks() {
     _saveData();
   }
