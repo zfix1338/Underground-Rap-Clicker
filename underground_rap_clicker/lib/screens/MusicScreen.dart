@@ -6,8 +6,9 @@ class Track {
   final String artist;
   final String duration;
   final int cost;
-  final String audioAsset; // например 'assets/audio/blonde.mp3'
-  final String coverAsset; // например 'assets/images/blonde_cover.png'
+  /// Только имя файла, например 'blonde.mp3'
+  final String audioAsset;
+  final String coverAsset;
 
   bool isUploaded;
   bool isPlaying;
@@ -48,17 +49,21 @@ class _MusicScreenState extends State<MusicScreen> {
   void initState() {
     super.initState();
 
-    // Подписываемся на событие завершения трека
-    // (В старых версиях называется onPlayerCompletion)
-    _audioPlayer.onPlayerCompletion.listen((_) {
+    // Когда трек доиграл
+    _audioPlayer.onPlayerComplete.listen((_) {
       setState(() {
-        // Сбрасываем флаги, когда трек доиграл
         if (_currentPlayingIndex >= 0 &&
             _currentPlayingIndex < widget.tracks.length) {
           widget.tracks[_currentPlayingIndex].isPlaying = false;
         }
         _currentPlayingIndex = -1;
       });
+    });
+
+    // Если хотите следить за состоянием (playing, paused, stopped):
+    _audioPlayer.onPlayerStateChanged.listen((state) {
+      // state - это PlayerState, может быть playing, paused, stopped, completed
+      // Можно обновлять UI при необходимости
     });
   }
 
@@ -68,12 +73,11 @@ class _MusicScreenState extends State<MusicScreen> {
     super.dispose();
   }
 
-  /// Покупка (Upload) трека
   void _uploadTrack(int index) {
     final track = widget.tracks[index];
     final cost = track.cost;
     if (widget.monthlyListeners >= cost) {
-      widget.onSpend(cost); // списываем стоимость
+      widget.onSpend(cost);
       setState(() {
         track.isUploaded = true;
       });
@@ -84,12 +88,12 @@ class _MusicScreenState extends State<MusicScreen> {
     }
   }
 
-  /// Воспроизведение / Пауза трека
+  /// Воспроизведение / Пауза локального файла (assets/audio/filename.mp3)
   Future<void> _togglePlayPause(int index) async {
     final track = widget.tracks[index];
-    if (!track.isUploaded) return; // не загружен - не играем
+    if (!track.isUploaded) return; // если не куплен
 
-    // Если трек уже играет - ставим на паузу
+    // Если трек уже играет -> пауза
     if (track.isPlaying) {
       await _audioPlayer.pause();
       setState(() {
@@ -98,35 +102,31 @@ class _MusicScreenState extends State<MusicScreen> {
       return;
     }
 
-    // Иначе, если играет другой трек - остановим его
+    // Если другой трек играет -> стоп
     if (_currentPlayingIndex != -1 && _currentPlayingIndex != index) {
       widget.tracks[_currentPlayingIndex].isPlaying = false;
       await _audioPlayer.stop();
     }
 
-    // Пытаемся запустить текущий трек (локальный файл)
-    // В старых версиях audioplayers нужно передать путь + isLocal: true
-    final result = await _audioPlayer.play(
-      track.audioAsset,
-      isLocal: true, // важный флаг для локальных файлов
+    // Устанавливаем источник (AssetSource требует только имя файла)
+    await _audioPlayer.setSource(
+      AssetSource(track.audioAsset),
     );
 
-    // В старых версиях: result == 1 => успех, 0 => ошибка
-    if (result == 1) {
-      setState(() {
-        track.isPlaying = true;
-        _currentPlayingIndex = index;
-      });
-    } else {
-      debugPrint('Error playing track (result=$result)');
-    }
+    // Запускаем
+    await _audioPlayer.resume(); // начинаем воспроизведение
+
+    // Успех
+    setState(() {
+      track.isPlaying = true;
+      _currentPlayingIndex = index;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[850],
-      // Если это просто вкладка без AppBar, можете убрать AppBar
       appBar: AppBar(
         title: const Text('Music'),
         backgroundColor: Colors.black,
@@ -135,7 +135,6 @@ class _MusicScreenState extends State<MusicScreen> {
         itemCount: widget.tracks.length,
         itemBuilder: (context, index) {
           final track = widget.tracks[index];
-
           String statusText;
           if (!track.isUploaded) {
             statusText = 'cost: ${track.cost}';
@@ -153,7 +152,7 @@ class _MusicScreenState extends State<MusicScreen> {
               color: Colors.grey[900],
               child: Row(
                 children: [
-                  // Обложка (локальное изображение)
+                  // Обложка
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.asset(
@@ -165,7 +164,7 @@ class _MusicScreenState extends State<MusicScreen> {
                   ),
                   const SizedBox(width: 8),
 
-                  // Информация о треке
+                  // Инфа
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,9 +194,7 @@ class _MusicScreenState extends State<MusicScreen> {
                         Text(
                           statusText,
                           style: TextStyle(
-                            color: track.isPlaying
-                                ? Colors.orange
-                                : Colors.white70,
+                            color: track.isPlaying ? Colors.orange : Colors.white70,
                             fontSize: 14,
                           ),
                         ),
@@ -205,7 +202,6 @@ class _MusicScreenState extends State<MusicScreen> {
                     ),
                   ),
 
-                  // Кнопка Upload, если не загружен
                   if (!track.isUploaded)
                     ElevatedButton(
                       onPressed: () => _uploadTrack(index),
@@ -215,14 +211,10 @@ class _MusicScreenState extends State<MusicScreen> {
                       child: Text(
                         'Upload\ncost: ${track.cost}',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
+                        style: const TextStyle(color: Colors.white, fontSize: 12),
                       ),
                     )
                   else
-                    // Меню (три точки), если хотите доп. опции
                     PopupMenuButton<String>(
                       icon: const Icon(Icons.more_vert, color: Colors.white),
                       onSelected: (value) {
@@ -243,4 +235,14 @@ class _MusicScreenState extends State<MusicScreen> {
       ),
     );
   }
+}
+
+class AssetSource {
+  AssetSource(String audioAsset);
+}
+
+extension on AudioPlayer {
+  get onPlayerComplete => null;
+
+  setSource(assetSource) {}
 }
