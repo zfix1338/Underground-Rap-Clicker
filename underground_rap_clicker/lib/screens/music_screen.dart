@@ -1,41 +1,23 @@
+// music_screen.dart
+// 
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
-
-class Track {
-  final String title;
-  final String artist;
-  final String duration;
-  final int cost;
-  /// Только имя файла, например 'blonde.mp3'
-  final String audioAsset;
-  final String coverAsset;
-
-  bool isUploaded;
-  bool isPlaying;
-
-  Track({
-    required this.title,
-    required this.artist,
-    required this.duration,
-    required this.cost,
-    required this.audioAsset,
-    required this.coverAsset,
-    this.isUploaded = false,
-    this.isPlaying = false,
-  });
-}
+import 'package:underground_rap_clicker/models.dart';
+import 'dart:async';
 
 class MusicScreen extends StatefulWidget {
   final int monthlyListeners;
   final Function(int cost) onSpend;
   final List<Track> tracks;
+  final VoidCallback onTrackUpdate;
 
   const MusicScreen({
-    Key? key,
+    super.key,
     required this.monthlyListeners,
     required this.onSpend,
     required this.tracks,
-  }) : super(key: key);
+    required this.onTrackUpdate,
+  });
 
   @override
   State<MusicScreen> createState() => _MusicScreenState();
@@ -43,44 +25,48 @@ class MusicScreen extends StatefulWidget {
 
 class _MusicScreenState extends State<MusicScreen> {
   final AudioPlayer _audioPlayer = AudioPlayer();
+  late StreamSubscription _playerCompleteSubscription;
+  late StreamSubscription _playerStateSubscription;
   int _currentPlayingIndex = -1;
 
   @override
   void initState() {
     super.initState();
-
-    // Когда трек доиграл
-    _audioPlayer.onPlayerComplete.listen((_) {
+    // Устанавливаем режим, при котором плеер останавливается после завершения воспроизведения.
+    _audioPlayer.setReleaseMode(ReleaseMode.stop);
+    _playerCompleteSubscription = _audioPlayer.onPlayerComplete.listen((_) {
       setState(() {
-        if (_currentPlayingIndex >= 0 &&
-            _currentPlayingIndex < widget.tracks.length) {
+        if (_currentPlayingIndex >= 0 && _currentPlayingIndex < widget.tracks.length) {
           widget.tracks[_currentPlayingIndex].isPlaying = false;
         }
         _currentPlayingIndex = -1;
       });
+      widget.onTrackUpdate();
     });
-
-    // Если хотите следить за состоянием (playing, paused, stopped):
-    _audioPlayer.onPlayerStateChanged.listen((state) {
-      // state - это PlayerState, может быть playing, paused, stopped, completed
-      // Можно обновлять UI при необходимости
+    _playerStateSubscription = _audioPlayer.onPlayerStateChanged.listen((state) {
+      // Здесь можно обновлять UI при изменении состояния плеера
     });
   }
 
   @override
   void dispose() {
+    _playerCompleteSubscription.cancel();
+    _playerStateSubscription.cancel();
     _audioPlayer.dispose();
     super.dispose();
   }
 
-  void _uploadTrack(int index) {
+  // Метод загрузки трека: после успешной загрузки трек сразу начинает воспроизводиться.
+  void _uploadTrack(int index) async {
     final track = widget.tracks[index];
-    final cost = track.cost;
-    if (widget.monthlyListeners >= cost) {
-      widget.onSpend(cost);
+    if (widget.monthlyListeners >= track.cost) {
+      widget.onSpend(track.cost);
       setState(() {
         track.isUploaded = true;
       });
+      widget.onTrackUpdate();
+      // Автоматически запускаем воспроизведение после загрузки.
+      await _togglePlayPause(index);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Not enough listeners to upload track')),
@@ -88,62 +74,52 @@ class _MusicScreenState extends State<MusicScreen> {
     }
   }
 
-  /// Воспроизведение / Пауза локального файла (assets/audio/filename.mp3)
+  // Метод для переключения между воспроизведением и паузой
   Future<void> _togglePlayPause(int index) async {
     final track = widget.tracks[index];
-    if (!track.isUploaded) return; // если не куплен
+    if (!track.isUploaded) return;
 
-    // Если трек уже играет -> пауза
     if (track.isPlaying) {
       await _audioPlayer.pause();
       setState(() {
         track.isPlaying = false;
       });
+      widget.onTrackUpdate();
       return;
     }
 
-    // Если другой трек играет -> стоп
     if (_currentPlayingIndex != -1 && _currentPlayingIndex != index) {
       widget.tracks[_currentPlayingIndex].isPlaying = false;
       await _audioPlayer.stop();
     }
 
-    // Устанавливаем источник (AssetSource требует только имя файла)
-    await _audioPlayer.setSource(
-      AssetSource(track.audioAsset),
-    );
+    // Воспроизводим аудиофайл через AssetSource, используя правильный путь.
+    await _audioPlayer.play(AssetSource(track.audioFile));
 
-    // Запускаем
-    await _audioPlayer.resume(); // начинаем воспроизведение
-
-    // Успех
     setState(() {
       track.isPlaying = true;
       _currentPlayingIndex = index;
     });
+    widget.onTrackUpdate();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[850],
-      appBar: AppBar(
-        title: const Text('Music'),
-        backgroundColor: Colors.black,
-      ),
+      appBar: AppBar(title: const Text('Music'), backgroundColor: Colors.black),
       body: ListView.builder(
         itemCount: widget.tracks.length,
         itemBuilder: (context, index) {
           final track = widget.tracks[index];
           String statusText;
           if (!track.isUploaded) {
-            statusText = 'cost: ${track.cost}';
+            statusText = 'Cost: ${track.cost}';
           } else if (track.isPlaying) {
             statusText = 'Now Playing';
           } else {
             statusText = 'Paused';
           }
-
           return GestureDetector(
             onTap: () => _togglePlayPause(index),
             child: Container(
@@ -152,7 +128,6 @@ class _MusicScreenState extends State<MusicScreen> {
               color: Colors.grey[900],
               child: Row(
                 children: [
-                  // Обложка
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.asset(
@@ -163,8 +138,6 @@ class _MusicScreenState extends State<MusicScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-
-                  // Инфа
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,7 +174,6 @@ class _MusicScreenState extends State<MusicScreen> {
                       ],
                     ),
                   ),
-
                   if (!track.isUploaded)
                     ElevatedButton(
                       onPressed: () => _uploadTrack(index),
@@ -209,16 +181,19 @@ class _MusicScreenState extends State<MusicScreen> {
                         backgroundColor: Colors.grey[700],
                       ),
                       child: Text(
-                        'Upload\ncost: ${track.cost}',
+                        'Upload\nCost: ${track.cost}',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
                       ),
                     )
                   else
                     PopupMenuButton<String>(
                       icon: const Icon(Icons.more_vert, color: Colors.white),
                       onSelected: (value) {
-                        // ...
+                        // Дополнительные действия (например, удаление)
                       },
                       itemBuilder: (context) => [
                         const PopupMenuItem(
@@ -235,14 +210,4 @@ class _MusicScreenState extends State<MusicScreen> {
       ),
     );
   }
-}
-
-class AssetSource {
-  AssetSource(String audioAsset);
-}
-
-extension on AudioPlayer {
-  get onPlayerComplete => null;
-
-  setSource(assetSource) {}
 }

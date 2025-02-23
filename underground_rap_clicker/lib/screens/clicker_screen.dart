@@ -5,10 +5,10 @@ class ClickerScreen extends StatelessWidget {
   final VoidCallback onTap;
 
   const ClickerScreen({
-    Key? key,
+    super.key,
     required this.listensCount,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

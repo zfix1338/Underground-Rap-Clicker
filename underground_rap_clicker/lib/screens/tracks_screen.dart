@@ -4,9 +4,9 @@ class TracksScreen extends StatelessWidget {
   final int listensCount;
 
   const TracksScreen({
-    Key? key,
+    super.key,
     required this.listensCount,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
