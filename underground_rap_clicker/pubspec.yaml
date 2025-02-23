@@ -59,8 +59,8 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/
-    - assets/audio/
+    - assets/images/blonde_cover.png
+    - assets/audio/blonde.mp3
 
 
   # To add assets to your application, add an assets section, like this:
