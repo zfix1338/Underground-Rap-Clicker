@@ -9,6 +9,10 @@ on:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        # Все run-степы будут выполняться в каталоге underground_rap_clicker
+        working-directory: underground_rap_clicker
 
     steps:
       - uses: actions/checkout@v3
@@ -19,16 +23,15 @@ jobs:
           channel: stable
 
       - name: Install dependencies
-        working-directory: underground_rap_clicker
         run: flutter pub get
 
       - name: Build APK (release)
-        working-directory: underground_rap_clicker
         run: flutter build apk --release
 
       - name: Upload APK
-        working-directory: underground_rap_clicker
+        # Для шага, использующего "uses", настройка working-directory не применяется,
+        # поэтому путь указываем относительно корня репозитория.
         uses: actions/upload-artifact@v4.6.1
         with:
           name: release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: underground_rap_clicker/build/app/outputs/flutter-apk/app-release.apk
