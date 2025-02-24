@@ -1,4 +1,3 @@
-// main.dart
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -32,12 +31,10 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
-  // Параметры кликера
   int monthlyListeners = 0;
   int baseListenersPerClick = 1;
   int passiveListenersPerSecond = 0;
 
-  // Список апгрейдов
   List<UpgradeItem> upgrades = [
     UpgradeItem(
       title: 'Make New Beat',
@@ -69,15 +66,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     ),
   ];
 
-  // Обратите внимание: стоимость трека снижена до 10
-  // Убедитесь, что аудиофайл (blonde.mp3) находится в assets/audio/
   List<Track> tracks = [
     Track(
       title: 'Blonde',
       artist: 'osamason',
       duration: '2:24',
       cost: 10,
-      audioFile: 'blonde.mp3', // файл должен лежать в assets/audio/
+      audioFile: 'blonde.mp3', 
       coverAsset: 'assets/images/blonde_cover.png',
     ),
   ];
@@ -193,7 +188,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
-  // Вызывается из MusicScreen для обновления состояния (сохранения треков)
   void _updateTracks() {
     _saveData();
   }

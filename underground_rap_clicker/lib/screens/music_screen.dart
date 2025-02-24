@@ -1,4 +1,3 @@
-// music_screen.dart
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:underground_rap_clicker/models.dart';
@@ -31,7 +30,6 @@ class _MusicScreenState extends State<MusicScreen> {
   @override
   void initState() {
     super.initState();
-    // Устанавливаем режим: по окончании воспроизведения плеер останавливается.
     _audioPlayer.setReleaseMode(ReleaseMode.stop);
     _playerCompleteSubscription = _audioPlayer.onPlayerComplete.listen((_) {
       setState(() {
@@ -43,7 +41,7 @@ class _MusicScreenState extends State<MusicScreen> {
       widget.onTrackUpdate();
     });
     _playerStateSubscription = _audioPlayer.onPlayerStateChanged.listen((state) {
-      // Здесь можно обновлять UI, если требуется
+      // Можно обновлять UI, если требуется
     });
   }
 
@@ -55,8 +53,6 @@ class _MusicScreenState extends State<MusicScreen> {
     super.dispose();
   }
 
-  // Новая функция для загрузки трека.
-  // После успешной покупки сразу запускается воспроизведение.
   Future<void> _uploadTrack(int index) async {
     final track = widget.tracks[index];
     if (widget.monthlyListeners >= track.cost) {
@@ -65,7 +61,6 @@ class _MusicScreenState extends State<MusicScreen> {
         track.isUploaded = true;
       });
       widget.onTrackUpdate();
-      // Запускаем воспроизведение после загрузки
       await _startTrackPlayback(index);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -74,21 +69,17 @@ class _MusicScreenState extends State<MusicScreen> {
     }
   }
 
-  // Новая вспомогательная функция для воспроизведения трека.
   Future<void> _startTrackPlayback(int index) async {
     final track = widget.tracks[index];
     if (!track.isUploaded) return;
 
-    // Если какой-то другой трек уже играет, останавливаем его
     if (_currentPlayingIndex != -1 && _currentPlayingIndex != index) {
       widget.tracks[_currentPlayingIndex].isPlaying = false;
       await _audioPlayer.stop();
     }
 
     try {
-      // Устанавливаем источник трека и запускаем воспроизведение
       await _audioPlayer.setSource(AssetSource(track.audioFile));
-      // Небольшая задержка для стабильной работы
       await Future.delayed(const Duration(milliseconds: 100));
       await _audioPlayer.resume();
     } catch (e) {
@@ -102,7 +93,6 @@ class _MusicScreenState extends State<MusicScreen> {
     widget.onTrackUpdate();
   }
 
-  // Функция для переключения воспроизведения/паузы.
   Future<void> _togglePlayPause(int index) async {
     final track = widget.tracks[index];
     if (!track.isUploaded) return;
@@ -211,7 +201,7 @@ class _MusicScreenState extends State<MusicScreen> {
                     PopupMenuButton<String>(
                       icon: const Icon(Icons.more_vert, color: Colors.white),
                       onSelected: (value) {
-                        // Дополнительные действия (например, удаление)
+                        // Дополнительные действия
                       },
                       itemBuilder: (context) => [
                         const PopupMenuItem(
