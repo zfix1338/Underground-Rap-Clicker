@@ -23,56 +23,45 @@ class UpgradeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: const Text('Upgrade'),
-      ),
+      // Удалено выпадающее меню "upgrade" в AppBar
       body: Column(
         children: [
           Expanded(
             flex: 2,
-            child: Container(
-              color: Colors.white,
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    color: Colors.white,
-                    child: Column(
-                      children: [
-                        Text(
-                          "Monthly: $monthlyListeners",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.black,
+            child: GestureDetector(
+              onTap: onClick,
+              child: Container(
+                color: Colors.white,
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      color: Colors.white,
+                      child: Column(
+                        children: [
+                          Text(
+                            "Monthly: $monthlyListeners",
+                            style: const TextStyle(
+                              fontSize: 18,
+                              color: Colors.black,
+                            ),
                           ),
-                        ),
-                        Text(
-                          "+$baseListenersPerClick / tap, +$passiveListenersPerSecond / sec",
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.black54,
+                          Text(
+                            "+$baseListenersPerClick / tap, +$passiveListenersPerSecond / sec",
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.black54,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: onClick,
-                      child: Center(
-                        child: Text(
-                          "Tap Here!",
-                          style: TextStyle(
-                            fontSize: 24,
-                            color: Colors.black, // Изменен цвет текста
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+                    // Удален текст "Tap Here!" для обеспечения плавного нажатия по всей зоне
+                    Expanded(
+                      child: Container(),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

@@ -61,7 +61,9 @@ class _MusicScreenState extends State<MusicScreen> {
 
   void _handleTrackEnd() {
     setState(() {
-      widget.tracks[_currentPlayingIndex].isPlaying = false;
+      if (_currentPlayingIndex >= 0 && _currentPlayingIndex < widget.tracks.length) {
+        widget.tracks[_currentPlayingIndex].isPlaying = false;
+      }
       _currentPlayingIndex = -1;
       _currentPosition = Duration.zero;
       _totalDuration = Duration.zero;
@@ -71,7 +73,9 @@ class _MusicScreenState extends State<MusicScreen> {
 
   void _handleTrackStopped() {
     setState(() {
-      widget.tracks[_currentPlayingIndex].isPlaying = false;
+      if (_currentPlayingIndex >= 0 && _currentPlayingIndex < widget.tracks.length) {
+        widget.tracks[_currentPlayingIndex].isPlaying = false;
+      }
       _currentPosition = Duration.zero;
       _totalDuration = Duration.zero;
     });
@@ -82,7 +86,7 @@ class _MusicScreenState extends State<MusicScreen> {
     final track = widget.tracks[index];
     if (!track.isUploaded) return;
 
-    if (_currentPlayingIndex!= -1 && _currentPlayingIndex!= index) {
+    if (_currentPlayingIndex != -1 && _currentPlayingIndex != index) {
       setState(() {
         widget.tracks[_currentPlayingIndex].isPlaying = false;
       });
@@ -93,6 +97,7 @@ class _MusicScreenState extends State<MusicScreen> {
       if (kIsWeb) {
         await _audioPlayer.setSource(UrlSource(track.audioFile));
       } else {
+        // Исправлен путь к аудиофайлу - AssetSource добавляет prefix 'assets/'
         await _audioPlayer.setSource(AssetSource(track.audioFile));
       }
       await _audioPlayer.resume();
@@ -116,12 +121,19 @@ class _MusicScreenState extends State<MusicScreen> {
 
     if (track.isPlaying) {
       await _audioPlayer.pause();
+      setState(() {
+        track.isPlaying = false;
+      });
     } else {
-      await _startTrackPlayback(index);
+      if (_currentPlayingIndex == index) {
+        await _audioPlayer.resume();
+        setState(() {
+          track.isPlaying = true;
+        });
+      } else {
+        await _startTrackPlayback(index);
+      }
     }
-    setState(() {
-      track.isPlaying =!track.isPlaying;
-    });
     widget.onTrackUpdate?.call();
   }
 
@@ -171,7 +183,7 @@ class _MusicScreenState extends State<MusicScreen> {
           }
 
           return GestureDetector(
-            onTap: () => _togglePlayPause(index),
+            onTap: () => track.isUploaded ? _togglePlayPause(index) : null,
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               padding: const EdgeInsets.all(8),
@@ -246,7 +258,7 @@ class _MusicScreenState extends State<MusicScreen> {
                       else
                         IconButton(
                           icon: Icon(
-                            track.isPlaying? Icons.pause: Icons.play_arrow,
+                            track.isPlaying ? Icons.pause : Icons.play_arrow,
                             color: Colors.white,
                           ),
                           onPressed: () => _togglePlayPause(index),
