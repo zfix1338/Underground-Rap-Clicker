@@ -1,22 +1,24 @@
 // lib/screens/music_screen.dart
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+
 import '../models.dart';
 
 class MusicScreen extends StatefulWidget {
   final List<Track> tracks;
-  final VoidCallback? onTrackUpdate;
+  final Function()? onTrackUpdate;
   final int monthlyListeners;
   final Function(int cost)? onSpend;
 
   const MusicScreen({
-    super.key,
+    Key? key,
     required this.tracks,
     this.onTrackUpdate,
     required this.monthlyListeners,
     this.onSpend,
-  });
+  }) : super(key: key);
 
   @override
   State<MusicScreen> createState() => _MusicScreenState();
@@ -33,14 +35,17 @@ class _MusicScreenState extends State<MusicScreen> {
     super.initState();
     _audioPlayer = AudioPlayer();
 
-    // NOTE: audioplayers v6+ больше не поддерживает onPlayerError, поэтому удаляем подписку
+    // Вместо onPlayerError используем только try/catch.
+    // Если твоя версия audioplayers поддерживает onPlayerError, можешь добавить обратно.
 
+    // Следим за позицией
     _audioPlayer.onPositionChanged.listen((pos) {
       setState(() {
         _currentPosition = pos;
       });
     });
 
+    // Следим за продолжительностью
     _audioPlayer.onDurationChanged.listen((dur) {
       setState(() {
         _totalDuration = dur;
@@ -58,15 +63,15 @@ class _MusicScreenState extends State<MusicScreen> {
     final track = widget.tracks[index];
     if (!track.isUploaded) return;
 
+    // Останавливаем предыдущий трек
     if (_currentPlayingIndex != -1 && _currentPlayingIndex != index) {
       widget.tracks[_currentPlayingIndex].isPlaying = false;
       await _audioPlayer.stop();
     }
 
     try {
-      // Для веба используем UrlSource, для мобилки – AssetSource
+      // Для веба часто UrlSource, для мобильных - AssetSource
       if (kIsWeb) {
-        // На вебе путь должен быть как в assets, например "assets/audio/blonde.mp3"
         await _audioPlayer.setSource(UrlSource(track.audioFile));
       } else {
         await _audioPlayer.setSource(AssetSource(track.audioFile));
@@ -74,17 +79,15 @@ class _MusicScreenState extends State<MusicScreen> {
 
       await _audioPlayer.resume();
 
-      if (!mounted) return;
       setState(() {
         track.isPlaying = true;
         _currentPlayingIndex = index;
       });
       widget.onTrackUpdate?.call();
     } catch (e) {
-      if (!mounted) return;
-      debugPrint("Playback error: $e");
+      if (!mounted) return; // чтоб не ругался на context
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Playback Error: $e")),
+        SnackBar(content: Text("Playback error: $e")),
       );
     }
   }
@@ -95,7 +98,6 @@ class _MusicScreenState extends State<MusicScreen> {
 
     if (track.isPlaying) {
       await _audioPlayer.pause();
-      if (!mounted) return;
       setState(() {
         track.isPlaying = false;
       });
@@ -107,15 +109,17 @@ class _MusicScreenState extends State<MusicScreen> {
 
   Future<void> _uploadTrack(int index) async {
     final track = widget.tracks[index];
+    // Проверяем баланс
     if (widget.monthlyListeners < track.cost) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Not enough balance to upload track!")),
+        const SnackBar(content: Text("Not enough balance to upload!")),
       );
       return;
     }
-    // Списываем стоимость через callback
+    // Списываем
     widget.onSpend?.call(track.cost);
+
     setState(() {
       track.isUploaded = true;
     });
@@ -125,7 +129,9 @@ class _MusicScreenState extends State<MusicScreen> {
 
   String _formatDuration(Duration d) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
-    return "${twoDigits(d.inMinutes.remainder(60))}:${twoDigits(d.inSeconds.remainder(60))}";
+    final minutes = twoDigits(d.inMinutes.remainder(60));
+    final seconds = twoDigits(d.inSeconds.remainder(60));
+    return "$minutes:$seconds";
   }
 
   @override
@@ -148,6 +154,7 @@ class _MusicScreenState extends State<MusicScreen> {
           } else {
             statusText = "Paused";
           }
+
           return GestureDetector(
             onTap: () => _togglePlayPause(index),
             child: Container(
@@ -197,7 +204,8 @@ class _MusicScreenState extends State<MusicScreen> {
                             Text(
                               statusText,
                               style: TextStyle(
-                                color: track.isPlaying ? Colors.orange : Colors.white70,
+                                color:
+                                    track.isPlaying ? Colors.orange : Colors.white70,
                                 fontSize: 14,
                               ),
                             ),
@@ -233,7 +241,7 @@ class _MusicScreenState extends State<MusicScreen> {
                     const SizedBox(height: 8),
                     Slider(
                       min: 0,
-                      max: _totalDuration.inSeconds.toDouble() > 0
+                      max: _totalDuration.inSeconds > 0
                           ? _totalDuration.inSeconds.toDouble()
                           : 1,
                       value: _currentPosition.inSeconds.toDouble().clamp(
@@ -245,7 +253,6 @@ class _MusicScreenState extends State<MusicScreen> {
                       onChanged: (value) async {
                         final newPos = Duration(seconds: value.toInt());
                         await _audioPlayer.seek(newPos);
-                        if (!mounted) return;
                         setState(() {
                           _currentPosition = newPos;
                         });
@@ -254,10 +261,14 @@ class _MusicScreenState extends State<MusicScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(_formatDuration(_currentPosition),
-                            style: const TextStyle(color: Colors.white70)),
-                        Text(_formatDuration(_totalDuration),
-                            style: const TextStyle(color: Colors.white70)),
+                        Text(
+                          _formatDuration(_currentPosition),
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                        Text(
+                          _formatDuration(_totalDuration),
+                          style: const TextStyle(color: Colors.white70),
+                        ),
                       ],
                     ),
                   ],

@@ -1,8 +1,9 @@
-// lib/main.dart
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+// Подключаем models.dart и экраны
 import 'models.dart';
 import 'screens/upgrade_screen.dart';
 import 'screens/music_screen.dart';
@@ -26,6 +27,7 @@ class MyApp extends StatelessWidget {
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
+
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
@@ -35,6 +37,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int baseListenersPerClick = 1;
   int passiveListenersPerSecond = 0;
 
+  // Пример апгрейдов
   List<UpgradeItem> upgrades = [
     UpgradeItem(
       title: 'Make New Beat',
@@ -66,13 +69,15 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     ),
   ];
 
+  // Пример треков
   List<Track> tracks = [
     Track(
       title: 'Blonde',
       artist: 'osamason',
       duration: '2:24',
       cost: 10,
-      audioFile: 'assets/audio/blonde.mp3', // полный путь к аудиофайлу
+      // Важно: путь совпадает с тем, что прописано в pubspec.yaml
+      audioFile: 'assets/audio/blonde.mp3',
       coverAsset: 'assets/images/blonde_cover.png',
     ),
   ];
@@ -117,15 +122,15 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       passiveListenersPerSecond =
           _prefs.getInt('passiveListenersPerSecond') ?? 0;
 
-      String? upgradesJson = _prefs.getString('upgrades');
+      final upgradesJson = _prefs.getString('upgrades');
       if (upgradesJson != null) {
-        List<dynamic> decoded = jsonDecode(upgradesJson);
+        final decoded = jsonDecode(upgradesJson) as List;
         upgrades = decoded.map((e) => UpgradeItem.fromMap(e)).toList();
       }
 
-      String? tracksJson = _prefs.getString('tracks');
+      final tracksJson = _prefs.getString('tracks');
       if (tracksJson != null) {
-        List<dynamic> decoded = jsonDecode(tracksJson);
+        final decoded = jsonDecode(tracksJson) as List;
         tracks = decoded.map((e) => Track.fromMap(e)).toList();
       }
     });
@@ -136,10 +141,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     _prefs.setInt('baseListenersPerClick', baseListenersPerClick);
     _prefs.setInt('passiveListenersPerSecond', passiveListenersPerSecond);
 
-    List upgradesList = upgrades.map((u) => u.toMap()).toList();
+    final upgradesList = upgrades.map((u) => u.toMap()).toList();
     _prefs.setString('upgrades', jsonEncode(upgradesList));
 
-    List tracksList = tracks.map((t) => t.toMap()).toList();
+    final tracksList = tracks.map((t) => t.toMap()).toList();
     _prefs.setString('tracks', jsonEncode(tracksList));
   }
 
@@ -153,12 +158,14 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
+  // Клик по белой зоне
   void _handleClick() {
     setState(() {
       monthlyListeners += baseListenersPerClick;
     });
   }
 
+  // Улучшаем апгрейд
   void _handleLevelUp(int index) {
     final upgrade = upgrades[index];
     if (monthlyListeners >= upgrade.cost) {
@@ -175,13 +182,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     }
   }
 
-  // Списываем listeners только если достаточно средств
+  // Списать слушателей
   void _spendListeners(int cost) {
-    if (monthlyListeners >= cost) {
-      setState(() {
-        monthlyListeners -= cost;
-      });
-    }
+    setState(() {
+      monthlyListeners -= cost;
+      if (monthlyListeners < 0) monthlyListeners = 0;
+    });
   }
 
   void _onItemTapped(int index) {
@@ -190,6 +196,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
+  // Обновление треков (сохранение)
   void _updateTracks() {
     _saveData();
   }
@@ -214,7 +221,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     ];
 
     return Scaffold(
-      body: SafeArea(child: screens[_selectedTabIndex]),
+      body: SafeArea(
+        child: screens[_selectedTabIndex],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedTabIndex,
         onTap: _onItemTapped,

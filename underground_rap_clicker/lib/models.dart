@@ -1,5 +1,4 @@
-// models.dart
-// Определение моделей данных
+// lib/models.dart
 
 class UpgradeItem {
   String title;
@@ -16,21 +15,25 @@ class UpgradeItem {
     required this.increment,
   });
 
-  factory UpgradeItem.fromMap(Map<String, dynamic> map) => UpgradeItem(
-        title: map['title'],
-        type: map['type'],
-        level: map['level'],
-        cost: map['cost'],
-        increment: map['increment'],
-      );
+  factory UpgradeItem.fromMap(Map<String, dynamic> map) {
+    return UpgradeItem(
+      title: map['title'],
+      type: map['type'],
+      level: map['level'],
+      cost: map['cost'],
+      increment: map['increment'],
+    );
+  }
 
-  Map<String, dynamic> toMap() => {
-        'title': title,
-        'type': type,
-        'level': level,
-        'cost': cost,
-        'increment': increment,
-      };
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'type': type,
+      'level': level,
+      'cost': cost,
+      'increment': increment,
+    };
+  }
 }
 
 class Track {
@@ -38,8 +41,8 @@ class Track {
   String artist;
   String duration;
   int cost;
-  String audioFile; // Путь, например "assets/audio/blonde.mp3"
-  String coverAsset;
+  String audioFile;  // Важно: 'assets/audio/blonde.mp3'
+  String coverAsset; // Важно: 'assets/images/blonde_cover.png'
   bool isUploaded;
   bool isPlaying;
 
@@ -54,25 +57,29 @@ class Track {
     this.isPlaying = false,
   });
 
-  factory Track.fromMap(Map<String, dynamic> map) => Track(
-        title: map['title'],
-        artist: map['artist'],
-        duration: map['duration'],
-        cost: map['cost'],
-        audioFile: map['audioFile'],
-        coverAsset: map['coverAsset'],
-        isUploaded: map['isUploaded'] ?? false,
-        isPlaying: map['isPlaying'] ?? false,
-      );
+  factory Track.fromMap(Map<String, dynamic> map) {
+    return Track(
+      title: map['title'],
+      artist: map['artist'],
+      duration: map['duration'],
+      cost: map['cost'],
+      audioFile: map['audioFile'],
+      coverAsset: map['coverAsset'],
+      isUploaded: map['isUploaded'] ?? false,
+      isPlaying: map['isPlaying'] ?? false,
+    );
+  }
 
-  Map<String, dynamic> toMap() => {
-        'title': title,
-        'artist': artist,
-        'duration': duration,
-        'cost': cost,
-        'audioFile': audioFile,
-        'coverAsset': coverAsset,
-        'isUploaded': isUploaded,
-        'isPlaying': isPlaying,
-      };
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'artist': artist,
+      'duration': duration,
+      'cost': cost,
+      'audioFile': audioFile,
+      'coverAsset': coverAsset,
+      'isUploaded': isUploaded,
+      'isPlaying': isPlaying,
+    };
+  }
 }
