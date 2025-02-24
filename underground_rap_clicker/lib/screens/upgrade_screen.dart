@@ -1,5 +1,3 @@
-// lib/screens/upgrade_screen.dart
-
 import 'package:flutter/material.dart';
 import '../models.dart';
 
@@ -23,6 +21,10 @@ class UpgradeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Сделаем большую белую зону (2/3 экрана),
+    // в верхней части которой компактный счётчик,
+    // а остальное пространство – зона для тапа.
+
     return Scaffold(
       backgroundColor: Colors.grey[850],
       appBar: AppBar(
@@ -31,33 +33,59 @@ class UpgradeScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // Белая зона сверху (тапаем, чтобы добавить слушателей)
+          // Белая зона (2/3 высоты)
           Expanded(
             flex: 2,
-            child: GestureDetector(
-              onTap: onClick,
-              child: Container(
-                color: Colors.white,
-                child: Center(
-                  child: Text(
-                    'monthly listeners: $monthlyListeners\n'
-                    '+ $baseListenersPerClick / tap\n'
-                    '+ $passiveListenersPerSecond / sec\n\n'
-                    'Tap Here!',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 20,
+            child: Container(
+              color: Colors.white,
+              child: Column(
+                children: [
+                  // Счётчик наверху
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    color: Colors.white,
+                    child: Column(
+                      children: [
+                        Text(
+                          "Monthly: $monthlyListeners",
+                          style: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.black,
+                          ),
+                        ),
+                        Text(
+                          "+$baseListenersPerClick / tap, +$passiveListenersPerSecond / sec",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
+                  // Остальное пространство – тапаем, чтобы увеличить
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: onClick,
+                      child: Center(
+                        child: Text(
+                          "Tap Here!",
+                          style: TextStyle(
+                            fontSize: 24,
+                            color: Colors.grey[700],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-
-          // Список апгрейдов
+          // Список апгрейдов (1/3 высоты)
           Expanded(
-            flex: 3,
+            flex: 1,
             child: Container(
               color: Colors.grey[850],
               child: ListView.builder(
@@ -111,7 +139,6 @@ class UpgradeScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                        // Кнопка Level Up
                         ElevatedButton(
                           onPressed: () => onLevelUp(index),
                           style: ElevatedButton.styleFrom(

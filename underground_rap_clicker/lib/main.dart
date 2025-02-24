@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Подключаем models.dart и экраны
+// ВАЖНО: правильные пути к локальным файлам
 import 'models.dart';
 import 'screens/upgrade_screen.dart';
 import 'screens/music_screen.dart';
@@ -76,7 +76,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       artist: 'osamason',
       duration: '2:24',
       cost: 10,
-      // Важно: путь совпадает с тем, что прописано в pubspec.yaml
+      // ВАЖНО: путь без двойного assets
       audioFile: 'assets/audio/blonde.mp3',
       coverAsset: 'assets/images/blonde_cover.png',
     ),
@@ -158,7 +158,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
-  // Клик по белой зоне
+  // Клик (тап) по белой зоне
   void _handleClick() {
     setState(() {
       monthlyListeners += baseListenersPerClick;

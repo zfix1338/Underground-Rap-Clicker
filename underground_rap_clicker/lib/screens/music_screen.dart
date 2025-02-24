@@ -1,5 +1,3 @@
-// lib/screens/music_screen.dart
-
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -35,17 +33,15 @@ class _MusicScreenState extends State<MusicScreen> {
     super.initState();
     _audioPlayer = AudioPlayer();
 
-    // Вместо onPlayerError используем только try/catch.
-    // Если твоя версия audioplayers поддерживает onPlayerError, можешь добавить обратно.
+    // Если в твоей версии audioplayers есть onPlayerError, можно подписаться,
+    // но в 6.1.0 иногда оно отсутствует, потому обрабатываем в try/catch.
 
-    // Следим за позицией
     _audioPlayer.onPositionChanged.listen((pos) {
       setState(() {
         _currentPosition = pos;
       });
     });
 
-    // Следим за продолжительностью
     _audioPlayer.onDurationChanged.listen((dur) {
       setState(() {
         _totalDuration = dur;
@@ -63,20 +59,18 @@ class _MusicScreenState extends State<MusicScreen> {
     final track = widget.tracks[index];
     if (!track.isUploaded) return;
 
-    // Останавливаем предыдущий трек
     if (_currentPlayingIndex != -1 && _currentPlayingIndex != index) {
       widget.tracks[_currentPlayingIndex].isPlaying = false;
       await _audioPlayer.stop();
     }
 
     try {
-      // Для веба часто UrlSource, для мобильных - AssetSource
       if (kIsWeb) {
+        // Для веба UrlSource, если mp3 не играет, возможно надо переконвертировать
         await _audioPlayer.setSource(UrlSource(track.audioFile));
       } else {
         await _audioPlayer.setSource(AssetSource(track.audioFile));
       }
-
       await _audioPlayer.resume();
 
       setState(() {
@@ -85,7 +79,7 @@ class _MusicScreenState extends State<MusicScreen> {
       });
       widget.onTrackUpdate?.call();
     } catch (e) {
-      if (!mounted) return; // чтоб не ругался на context
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Playback error: $e")),
       );
@@ -109,7 +103,6 @@ class _MusicScreenState extends State<MusicScreen> {
 
   Future<void> _uploadTrack(int index) async {
     final track = widget.tracks[index];
-    // Проверяем баланс
     if (widget.monthlyListeners < track.cost) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -117,9 +110,7 @@ class _MusicScreenState extends State<MusicScreen> {
       );
       return;
     }
-    // Списываем
     widget.onSpend?.call(track.cost);
-
     setState(() {
       track.isUploaded = true;
     });
@@ -165,6 +156,7 @@ class _MusicScreenState extends State<MusicScreen> {
                 children: [
                   Row(
                     children: [
+                      // Обложка трека
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.asset(
@@ -175,6 +167,7 @@ class _MusicScreenState extends State<MusicScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
+                      // Инфа о треке
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,14 +197,16 @@ class _MusicScreenState extends State<MusicScreen> {
                             Text(
                               statusText,
                               style: TextStyle(
-                                color:
-                                    track.isPlaying ? Colors.orange : Colors.white70,
+                                color: track.isPlaying
+                                    ? Colors.orange
+                                    : Colors.white70,
                                 fontSize: 14,
                               ),
                             ),
                           ],
                         ),
                       ),
+                      // Кнопка Upload / Play
                       if (!track.isUploaded)
                         ElevatedButton(
                           onPressed: () => _uploadTrack(index),
@@ -237,6 +232,7 @@ class _MusicScreenState extends State<MusicScreen> {
                         ),
                     ],
                   ),
+                  // Слайдер, если трек играет
                   if (track.isPlaying) ...[
                     const SizedBox(height: 8),
                     Slider(
