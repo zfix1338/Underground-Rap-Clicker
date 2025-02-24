@@ -16,14 +16,14 @@ class MusicScreen extends StatefulWidget {
     this.onTrackUpdate,
     required this.monthlyListeners,
     this.onSpend,
-  }) : super(key: key);
+  }): super(key: key);
 
   @override
   State<MusicScreen> createState() => _MusicScreenState();
 }
 
 class _MusicScreenState extends State<MusicScreen> {
-  late AudioPlayer _audioPlayer;
+  final AudioPlayer _audioPlayer = AudioPlayer();
   int _currentPlayingIndex = -1;
   Duration _currentPosition = Duration.zero;
   Duration _totalDuration = Duration.zero;
@@ -31,10 +31,6 @@ class _MusicScreenState extends State<MusicScreen> {
   @override
   void initState() {
     super.initState();
-    _audioPlayer = AudioPlayer();
-
-    // Если в твоей версии audioplayers есть onPlayerError, можно подписаться,
-    // но в 6.1.0 иногда оно отсутствует, потому обрабатываем в try/catch.
 
     _audioPlayer.onPositionChanged.listen((pos) {
       setState(() {
@@ -47,6 +43,14 @@ class _MusicScreenState extends State<MusicScreen> {
         _totalDuration = dur;
       });
     });
+
+    _audioPlayer.onPlayerStateChanged.listen((state) {
+      if (state == PlayerState.completed) {
+        _handleTrackEnd();
+      } else if (state == PlayerState.stopped) {
+        _handleTrackStopped();
+      }
+    });
   }
 
   @override
@@ -55,18 +59,38 @@ class _MusicScreenState extends State<MusicScreen> {
     super.dispose();
   }
 
+  void _handleTrackEnd() {
+    setState(() {
+      widget.tracks[_currentPlayingIndex].isPlaying = false;
+      _currentPlayingIndex = -1;
+      _currentPosition = Duration.zero;
+      _totalDuration = Duration.zero;
+    });
+    widget.onTrackUpdate?.call();
+  }
+
+  void _handleTrackStopped() {
+    setState(() {
+      widget.tracks[_currentPlayingIndex].isPlaying = false;
+      _currentPosition = Duration.zero;
+      _totalDuration = Duration.zero;
+    });
+    widget.onTrackUpdate?.call();
+  }
+
   Future<void> _startTrackPlayback(int index) async {
     final track = widget.tracks[index];
     if (!track.isUploaded) return;
 
-    if (_currentPlayingIndex != -1 && _currentPlayingIndex != index) {
-      widget.tracks[_currentPlayingIndex].isPlaying = false;
+    if (_currentPlayingIndex!= -1 && _currentPlayingIndex!= index) {
+      setState(() {
+        widget.tracks[_currentPlayingIndex].isPlaying = false;
+      });
       await _audioPlayer.stop();
     }
 
     try {
       if (kIsWeb) {
-        // Для веба UrlSource, если mp3 не играет, возможно надо переконвертировать
         await _audioPlayer.setSource(UrlSource(track.audioFile));
       } else {
         await _audioPlayer.setSource(AssetSource(track.audioFile));
@@ -92,12 +116,12 @@ class _MusicScreenState extends State<MusicScreen> {
 
     if (track.isPlaying) {
       await _audioPlayer.pause();
-      setState(() {
-        track.isPlaying = false;
-      });
     } else {
       await _startTrackPlayback(index);
     }
+    setState(() {
+      track.isPlaying =!track.isPlaying;
+    });
     widget.onTrackUpdate?.call();
   }
 
@@ -128,7 +152,7 @@ class _MusicScreenState extends State<MusicScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[850],
+      backgroundColor: Colors.grey,
       appBar: AppBar(
         title: const Text("Music"),
         backgroundColor: Colors.black,
@@ -151,12 +175,11 @@ class _MusicScreenState extends State<MusicScreen> {
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               padding: const EdgeInsets.all(8),
-              color: Colors.grey[900],
+              color: Colors.grey,
               child: Column(
                 children: [
                   Row(
                     children: [
-                      // Обложка трека
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.asset(
@@ -167,7 +190,6 @@ class _MusicScreenState extends State<MusicScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      // Инфа о треке
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,20 +220,19 @@ class _MusicScreenState extends State<MusicScreen> {
                               statusText,
                               style: TextStyle(
                                 color: track.isPlaying
-                                    ? Colors.orange
-                                    : Colors.white70,
+                                  ? Colors.orange
+                                  : Colors.white70,
                                 fontSize: 14,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      // Кнопка Upload / Play
                       if (!track.isUploaded)
                         ElevatedButton(
                           onPressed: () => _uploadTrack(index),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey[700],
+                            backgroundColor: Colors.grey,
                           ),
                           child: Text(
                             "Upload (${track.cost})",
@@ -225,21 +246,20 @@ class _MusicScreenState extends State<MusicScreen> {
                       else
                         IconButton(
                           icon: Icon(
-                            track.isPlaying ? Icons.pause : Icons.play_arrow,
+                            track.isPlaying? Icons.pause: Icons.play_arrow,
                             color: Colors.white,
                           ),
                           onPressed: () => _togglePlayPause(index),
                         ),
                     ],
                   ),
-                  // Слайдер, если трек играет
-                  if (track.isPlaying) ...[
+                  if (track.isPlaying)...[
                     const SizedBox(height: 8),
                     Slider(
                       min: 0,
                       max: _totalDuration.inSeconds > 0
-                          ? _totalDuration.inSeconds.toDouble()
-                          : 1,
+                        ? _totalDuration.inSeconds.toDouble()
+                        : 1,
                       value: _currentPosition.inSeconds.toDouble().clamp(
                             0,
                             _totalDuration.inSeconds.toDouble(),

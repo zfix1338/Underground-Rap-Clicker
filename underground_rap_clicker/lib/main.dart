@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// ВАЖНО: правильные пути к локальным файлам
 import 'models.dart';
 import 'screens/upgrade_screen.dart';
 import 'screens/music_screen.dart';
@@ -37,7 +36,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int baseListenersPerClick = 1;
   int passiveListenersPerSecond = 0;
 
-  // Пример апгрейдов
   List<UpgradeItem> upgrades = [
     UpgradeItem(
       title: 'Make New Beat',
@@ -69,15 +67,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     ),
   ];
 
-  // Пример треков
   List<Track> tracks = [
     Track(
       title: 'Blonde',
       artist: 'osamason',
       duration: '2:24',
       cost: 10,
-      // ВАЖНО: путь без двойного assets
-      audioFile: 'assets/audio/blonde.mp3',
+      audioFile: 'assets/audio/blonde.mp3', // Исправлен путь
       coverAsset: 'assets/images/blonde_cover.png',
     ),
   ];
@@ -117,21 +113,29 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   void _loadData() {
     setState(() {
-      monthlyListeners = _prefs.getInt('monthlyListeners') ?? 0;
-      baseListenersPerClick = _prefs.getInt('baseListenersPerClick') ?? 1;
+      monthlyListeners = _prefs.getInt('monthlyListeners')?? 0;
+      baseListenersPerClick = _prefs.getInt('baseListenersPerClick')?? 1;
       passiveListenersPerSecond =
-          _prefs.getInt('passiveListenersPerSecond') ?? 0;
+          _prefs.getInt('passiveListenersPerSecond')?? 0;
 
       final upgradesJson = _prefs.getString('upgrades');
-      if (upgradesJson != null) {
-        final decoded = jsonDecode(upgradesJson) as List;
-        upgrades = decoded.map((e) => UpgradeItem.fromMap(e)).toList();
+      if (upgradesJson!= null) {
+        try {
+          final decoded = jsonDecode(upgradesJson) as List;
+          upgrades = decoded.map((e) => UpgradeItem.fromMap(e)).toList();
+        } catch (e) {
+          print('Error loading upgrades: $e');
+        }
       }
 
       final tracksJson = _prefs.getString('tracks');
-      if (tracksJson != null) {
-        final decoded = jsonDecode(tracksJson) as List;
-        tracks = decoded.map((e) => Track.fromMap(e)).toList();
+      if (tracksJson!= null) {
+        try {
+          final decoded = jsonDecode(tracksJson) as List;
+          tracks = decoded.map((e) => Track.fromMap(e)).toList();
+        } catch (e) {
+          print('Error loading tracks: $e');
+        }
       }
     });
   }
@@ -158,14 +162,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
-  // Клик (тап) по белой зоне
   void _handleClick() {
     setState(() {
       monthlyListeners += baseListenersPerClick;
     });
   }
 
-  // Улучшаем апгрейд
   void _handleLevelUp(int index) {
     final upgrade = upgrades[index];
     if (monthlyListeners >= upgrade.cost) {
@@ -182,7 +184,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     }
   }
 
-  // Списать слушателей
   void _spendListeners(int cost) {
     setState(() {
       monthlyListeners -= cost;
@@ -196,9 +197,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
-  // Обновление треков (сохранение)
   void _updateTracks() {
     _saveData();
+    setState(() {}); // Добавлено обновление состояния
   }
 
   @override

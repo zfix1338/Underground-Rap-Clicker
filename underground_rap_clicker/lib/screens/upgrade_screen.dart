@@ -17,30 +17,24 @@ class UpgradeScreen extends StatelessWidget {
     required this.upgrades,
     required this.onClick,
     required this.onLevelUp,
-  }) : super(key: key);
+  }): super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Сделаем большую белую зону (2/3 экрана),
-    // в верхней части которой компактный счётчик,
-    // а остальное пространство – зона для тапа.
-
     return Scaffold(
-      backgroundColor: Colors.grey[850],
+      backgroundColor: Colors.grey,
       appBar: AppBar(
         backgroundColor: Colors.black,
         title: const Text('Upgrade'),
       ),
       body: Column(
         children: [
-          // Белая зона (2/3 высоты)
           Expanded(
             flex: 2,
             child: Container(
               color: Colors.white,
               child: Column(
                 children: [
-                  // Счётчик наверху
                   Container(
                     padding: const EdgeInsets.all(8),
                     color: Colors.white,
@@ -63,7 +57,6 @@ class UpgradeScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // Остальное пространство – тапаем, чтобы увеличить
                   Expanded(
                     child: GestureDetector(
                       onTap: onClick,
@@ -72,7 +65,7 @@ class UpgradeScreen extends StatelessWidget {
                           "Tap Here!",
                           style: TextStyle(
                             fontSize: 24,
-                            color: Colors.grey[700],
+                            color: Colors.black, // Изменен цвет текста
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -83,11 +76,10 @@ class UpgradeScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Список апгрейдов (1/3 высоты)
           Expanded(
             flex: 1,
             child: Container(
-              color: Colors.grey[850],
+              color: Colors.grey,
               child: ListView.builder(
                 itemCount: upgrades.length,
                 itemBuilder: (context, index) {
@@ -98,11 +90,10 @@ class UpgradeScreen extends StatelessWidget {
                       vertical: 4,
                     ),
                     padding: const EdgeInsets.all(8),
-                    color: Colors.grey[900],
+                    color: Colors.grey,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Описание апгрейда
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,7 +133,7 @@ class UpgradeScreen extends StatelessWidget {
                         ElevatedButton(
                           onPressed: () => onLevelUp(index),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey[700],
+                            backgroundColor: Colors.grey,
                           ),
                           child: Text(
                             "Level Up\n+${upgrade.increment}",

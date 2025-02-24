@@ -41,8 +41,8 @@ class Track {
   String artist;
   String duration;
   int cost;
-  String audioFile;  // 'assets/audio/blonde.mp3'
-  String coverAsset; // 'assets/images/blonde_cover.png'
+  String audioFile;  // Важно: "audio/blonde.mp3" (без "assets/")
+  String coverAsset; // "assets/images/blonde_cover.png"
   bool isUploaded;
   bool isPlaying;
 
