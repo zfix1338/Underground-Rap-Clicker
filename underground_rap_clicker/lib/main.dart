@@ -1,3 +1,4 @@
+// lib/main.dart
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -6,17 +7,17 @@ import 'models.dart';
 import 'screens/upgrade_screen.dart';
 import 'screens/music_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Clicker + Music Demo',
+      title: 'Underground Rap Clicker',
       debugShowCheckedModeBanner: false,
       home: const MainScreen(),
     );
@@ -25,18 +26,15 @@ class MyApp extends StatelessWidget {
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
-
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
-  // Параметры кликера
   int monthlyListeners = 0;
   int baseListenersPerClick = 1;
   int passiveListenersPerSecond = 0;
 
-  // Список апгрейдов
   List<UpgradeItem> upgrades = [
     UpgradeItem(
       title: 'Make New Beat',
@@ -68,15 +66,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     ),
   ];
 
-  // Обратите внимание: стоимость трека снижена до 10.
-  // В объекте Track изменён путь аудиофайла на 'audio/blonde.mp3'.
   List<Track> tracks = [
     Track(
       title: 'Blonde',
       artist: 'osamason',
       duration: '2:24',
       cost: 10,
-      audioFile: 'audio/blonde.mp3', // обновлённый путь к аудио (без assets/)
+      audioFile: 'assets/audio/blonde.mp3', // полный путь к аудиофайлу
       coverAsset: 'assets/images/blonde_cover.png',
     ),
   ];
@@ -123,13 +119,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
       String? upgradesJson = _prefs.getString('upgrades');
       if (upgradesJson != null) {
-        List<dynamic> decoded = jsonDecode(upgradesJson) as List<dynamic>;
+        List<dynamic> decoded = jsonDecode(upgradesJson);
         upgrades = decoded.map((e) => UpgradeItem.fromMap(e)).toList();
       }
 
       String? tracksJson = _prefs.getString('tracks');
       if (tracksJson != null) {
-        List<dynamic> decoded = jsonDecode(tracksJson) as List<dynamic>;
+        List<dynamic> decoded = jsonDecode(tracksJson);
         tracks = decoded.map((e) => Track.fromMap(e)).toList();
       }
     });
@@ -179,11 +175,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     }
   }
 
+  // Списываем listeners только если достаточно средств
   void _spendListeners(int cost) {
-    setState(() {
-      monthlyListeners -= cost;
-      if (monthlyListeners < 0) monthlyListeners = 0;
-    });
+    if (monthlyListeners >= cost) {
+      setState(() {
+        monthlyListeners -= cost;
+      });
+    }
   }
 
   void _onItemTapped(int index) {
@@ -192,7 +190,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
-  // Вызывается из MusicScreen для обновления состояния (сохранения треков)
   void _updateTracks() {
     _saveData();
   }

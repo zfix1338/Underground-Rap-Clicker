@@ -38,7 +38,7 @@ class Track {
   String artist;
   String duration;
   int cost;
-  String audioFile;
+  String audioFile; // Путь, например "assets/audio/blonde.mp3"
   String coverAsset;
   bool isUploaded;
   bool isPlaying;
