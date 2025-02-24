@@ -31,10 +31,12 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
+  // Параметры кликера
   int monthlyListeners = 0;
   int baseListenersPerClick = 1;
   int passiveListenersPerSecond = 0;
 
+  // Список апгрейдов
   List<UpgradeItem> upgrades = [
     UpgradeItem(
       title: 'Make New Beat',
@@ -66,13 +68,15 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     ),
   ];
 
+  // Обратите внимание: стоимость трека снижена до 10.
+  // В объекте Track изменён путь аудиофайла на 'audio/blonde.mp3'.
   List<Track> tracks = [
     Track(
       title: 'Blonde',
       artist: 'osamason',
       duration: '2:24',
       cost: 10,
-      audioFile: 'blonde.mp3', 
+      audioFile: 'audio/blonde.mp3', // обновлённый путь к аудио (без assets/)
       coverAsset: 'assets/images/blonde_cover.png',
     ),
   ];
@@ -188,6 +192,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
+  // Вызывается из MusicScreen для обновления состояния (сохранения треков)
   void _updateTracks() {
     _saveData();
   }

@@ -53,6 +53,7 @@ class _MusicScreenState extends State<MusicScreen> {
     super.dispose();
   }
 
+  // Функция загрузки и запуска воспроизведения трека.
   Future<void> _uploadTrack(int index) async {
     final track = widget.tracks[index];
     if (widget.monthlyListeners >= track.cost) {
@@ -61,6 +62,7 @@ class _MusicScreenState extends State<MusicScreen> {
         track.isUploaded = true;
       });
       widget.onTrackUpdate();
+      // Запуск воспроизведения после загрузки
       await _startTrackPlayback(index);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -69,19 +71,20 @@ class _MusicScreenState extends State<MusicScreen> {
     }
   }
 
+  // Новый подход: используем метод play для воспроизведения аудио.
   Future<void> _startTrackPlayback(int index) async {
     final track = widget.tracks[index];
     if (!track.isUploaded) return;
 
+    // Если уже играет другой трек, останавливаем его.
     if (_currentPlayingIndex != -1 && _currentPlayingIndex != index) {
       widget.tracks[_currentPlayingIndex].isPlaying = false;
       await _audioPlayer.stop();
     }
 
     try {
-      await _audioPlayer.setSource(AssetSource(track.audioFile));
-      await Future.delayed(const Duration(milliseconds: 100));
-      await _audioPlayer.resume();
+      // Воспроизведение трека с использованием метода play и указанием громкости.
+      await _audioPlayer.play(AssetSource(track.audioFile), volume: 1.0);
     } catch (e) {
       print("Error starting playback: $e");
     }
@@ -201,7 +204,7 @@ class _MusicScreenState extends State<MusicScreen> {
                     PopupMenuButton<String>(
                       icon: const Icon(Icons.more_vert, color: Colors.white),
                       onSelected: (value) {
-                        // Дополнительные действия
+                        // Дополнительные действия (например, удаление)
                       },
                       itemBuilder: (context) => [
                         const PopupMenuItem(
