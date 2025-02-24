@@ -97,7 +97,7 @@ class _MusicScreenState extends State<MusicScreen> {
       if (kIsWeb) {
         await _audioPlayer.setSource(UrlSource(track.audioFile));
       } else {
-        // Исправлен путь к аудиофайлу - AssetSource добавляет prefix 'assets/'
+        // Исправлен путь к аудиофайлу - audioFile уже не содержит ведущий слеш
         await _audioPlayer.setSource(AssetSource(track.audioFile));
       }
       await _audioPlayer.resume();
@@ -112,6 +112,7 @@ class _MusicScreenState extends State<MusicScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Playback error: $e")),
       );
+      print("Playback error details: $e"); // Добавляем вывод ошибки для отладки
     }
   }
 
