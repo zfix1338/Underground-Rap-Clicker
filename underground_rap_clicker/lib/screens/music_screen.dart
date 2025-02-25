@@ -5,6 +5,7 @@ import 'package:audioplayers/audioplayers.dart';
 import '../models.dart';
 
 class MusicScreen extends StatefulWidget {
+  final AudioPlayer audioPlayer; // Используем глобальный аудио плеер
   final List<Track> tracks;
   final Function()? onTrackUpdate;
   final int monthlyListeners;
@@ -12,18 +13,18 @@ class MusicScreen extends StatefulWidget {
 
   const MusicScreen({
     Key? key,
+    required this.audioPlayer,
     required this.tracks,
     this.onTrackUpdate,
     required this.monthlyListeners,
     this.onSpend,
-  }): super(key: key);
+  }) : super(key: key);
 
   @override
   State<MusicScreen> createState() => _MusicScreenState();
 }
 
 class _MusicScreenState extends State<MusicScreen> {
-  final AudioPlayer _audioPlayer = AudioPlayer();
   int _currentPlayingIndex = -1;
   Duration _currentPosition = Duration.zero;
   Duration _totalDuration = Duration.zero;
@@ -33,16 +34,8 @@ class _MusicScreenState extends State<MusicScreen> {
   void initState() {
     super.initState();
 
-    // Check if any track was previously playing and restore state
-    for (int i = 0; i < widget.tracks.length; i++) {
-      if (widget.tracks[i].isPlaying) {
-        _currentPlayingIndex = i;
-        Future.microtask(() => _startTrackPlayback(i));
-        break;
-      }
-    }
-
-    _audioPlayer.onPositionChanged.listen((pos) {
+    // Подписываемся на события глобального плеера
+    widget.audioPlayer.onPositionChanged.listen((pos) {
       if (mounted) {
         setState(() {
           _currentPosition = pos;
@@ -50,7 +43,7 @@ class _MusicScreenState extends State<MusicScreen> {
       }
     });
 
-    _audioPlayer.onDurationChanged.listen((dur) {
+    widget.audioPlayer.onDurationChanged.listen((dur) {
       if (mounted) {
         setState(() {
           _totalDuration = dur;
@@ -58,24 +51,32 @@ class _MusicScreenState extends State<MusicScreen> {
       }
     });
 
-    _audioPlayer.onPlayerStateChanged.listen((state) {
+    widget.audioPlayer.onPlayerStateChanged.listen((state) {
       if (state == PlayerState.completed) {
         _handleTrackEnd();
       } else if (state == PlayerState.stopped) {
         _handleTrackStopped();
       }
     });
+
+    // Если трек уже играет, продолжаем воспроизведение
+    for (int i = 0; i < widget.tracks.length; i++) {
+      if (widget.tracks[i].isPlaying) {
+        _currentPlayingIndex = i;
+        Future.microtask(() => _startTrackPlayback(i));
+        break;
+      }
+    }
   }
 
   @override
   void dispose() {
-    _audioPlayer.dispose();
+    // НЕ вызываем widget.audioPlayer.dispose(), так как он управляется глобально
     super.dispose();
   }
 
   void _handleTrackEnd() {
     if (!mounted) return;
-    
     setState(() {
       if (_currentPlayingIndex >= 0 && _currentPlayingIndex < widget.tracks.length) {
         widget.tracks[_currentPlayingIndex].isPlaying = false;
@@ -89,7 +90,6 @@ class _MusicScreenState extends State<MusicScreen> {
 
   void _handleTrackStopped() {
     if (!mounted) return;
-    
     setState(() {
       if (_currentPlayingIndex >= 0 && _currentPlayingIndex < widget.tracks.length) {
         widget.tracks[_currentPlayingIndex].isPlaying = false;
@@ -103,81 +103,57 @@ class _MusicScreenState extends State<MusicScreen> {
 
   Future<void> _startTrackPlayback(int index) async {
     if (_isLoading) return;
-    
     final track = widget.tracks[index];
     if (!track.isUploaded) return;
-    
     setState(() {
       _isLoading = true;
     });
-
     try {
-      // Stop current playback if different track
+      // Если другой трек уже играет, останавливаем его
       if (_currentPlayingIndex != -1 && _currentPlayingIndex != index) {
         setState(() {
           widget.tracks[_currentPlayingIndex].isPlaying = false;
         });
-        await _audioPlayer.stop();
+        await widget.audioPlayer.stop();
       }
-
-      // Reset player
-      await _audioPlayer.stop();
-      
-      // Set source and play
+      // Останавливаем и сбрасываем плеер
+      await widget.audioPlayer.stop();
       if (kIsWeb) {
-        await _audioPlayer.setSource(UrlSource('assets/${track.audioFile}'));
+        await widget.audioPlayer.setSource(UrlSource('assets/${track.audioFile}'));
       } else {
-        await _audioPlayer.setSource(AssetSource(track.audioFile));
+        await widget.audioPlayer.setSource(AssetSource(track.audioFile));
       }
-      
-      // Explicitly play the audio after setting the source
-      await _audioPlayer.resume();
-      print("Audio player resumed successfully.");
-
-      // Update UI state
-      if (mounted) {
-        setState(() {
-          track.isPlaying = true;
-          _currentPlayingIndex = index;
-          _isLoading = false;
-        });
-        
-        widget.onTrackUpdate?.call();
-      }
-      
-      // Debug output to confirm player state
-      final playerState = await _audioPlayer.state;
-      print("Audio player state: $playerState");
-      
+      // Запускаем воспроизведение
+      await widget.audioPlayer.resume();
+      setState(() {
+        track.isPlaying = true;
+        _currentPlayingIndex = index;
+        _isLoading = false;
+      });
+      widget.onTrackUpdate?.call();
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Playback error: $e")),
-        );
-      }
-      print("Playback error details: $e");
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Playback error: $e")),
+      );
     }
   }
 
   Future<void> _togglePlayPause(int index) async {
     if (_isLoading) return;
-    
     final track = widget.tracks[index];
     if (!track.isUploaded) return;
-
     try {
       if (track.isPlaying) {
-        await _audioPlayer.pause();
+        await widget.audioPlayer.pause();
         setState(() {
           track.isPlaying = false;
         });
       } else {
         if (_currentPlayingIndex == index) {
-          await _audioPlayer.resume();
+          await widget.audioPlayer.resume();
           setState(() {
             track.isPlaying = true;
           });
@@ -187,33 +163,25 @@ class _MusicScreenState extends State<MusicScreen> {
       }
       widget.onTrackUpdate?.call();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Toggle error: $e")),
-        );
-      }
-      print("Toggle error details: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Toggle error: $e")),
+      );
     }
   }
 
   Future<void> _uploadTrack(int index) async {
     if (_isLoading) return;
-    
     final track = widget.tracks[index];
     if (widget.monthlyListeners < track.cost) {
-      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Not enough balance to upload!")),
       );
       return;
     }
-    
     widget.onSpend?.call(track.cost);
     setState(() {
       track.isUploaded = true;
     });
-    
-    // Start playback immediately after upload
     await _startTrackPlayback(index);
     widget.onTrackUpdate?.call();
   }
@@ -245,7 +213,6 @@ class _MusicScreenState extends State<MusicScreen> {
           } else {
             statusText = "Paused";
           }
-
           return GestureDetector(
             onTap: () => track.isUploaded ? _togglePlayPause(index) : null,
             child: Container(
@@ -295,9 +262,7 @@ class _MusicScreenState extends State<MusicScreen> {
                             Text(
                               statusText,
                               style: TextStyle(
-                                color: track.isPlaying
-                                  ? Colors.orange
-                                  : Colors.white70,
+                                color: track.isPlaying ? Colors.orange : Colors.white70,
                                 fontSize: 14,
                               ),
                             ),
@@ -322,36 +287,36 @@ class _MusicScreenState extends State<MusicScreen> {
                       else
                         IconButton(
                           icon: _isLoading && _currentPlayingIndex == index
-                            ? const CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              )
-                            : Icon(
-                                track.isPlaying ? Icons.pause : Icons.play_arrow,
-                                color: Colors.white,
-                              ),
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                )
+                              : Icon(
+                                  track.isPlaying ? Icons.pause : Icons.play_arrow,
+                                  color: Colors.white,
+                                ),
                           onPressed: () => _togglePlayPause(index),
                         ),
                     ],
                   ),
-                  if (track.isPlaying)...[
+                  if (track.isPlaying) ...[
                     const SizedBox(height: 8),
                     Slider(
                       min: 0,
                       max: _totalDuration.inSeconds > 0
-                        ? _totalDuration.inSeconds.toDouble()
-                        : 1,
+                          ? _totalDuration.inSeconds.toDouble()
+                          : 1,
                       value: _currentPosition.inSeconds.toDouble().clamp(
-                            0,
-                            _totalDuration.inSeconds > 0 
-                            ? _totalDuration.inSeconds.toDouble() 
-                            : 1,
-                          ),
+                                0,
+                                _totalDuration.inSeconds > 0
+                                    ? _totalDuration.inSeconds.toDouble()
+                                    : 1,
+                              ),
                       activeColor: Colors.orange,
                       inactiveColor: Colors.grey,
                       onChanged: (value) async {
                         final newPos = Duration(seconds: value.toInt());
-                        await _audioPlayer.seek(newPos);
+                        await widget.audioPlayer.seek(newPos);
                         setState(() {
                           _currentPosition = newPos;
                         });

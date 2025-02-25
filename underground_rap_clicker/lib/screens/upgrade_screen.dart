@@ -17,7 +17,7 @@ class UpgradeScreen extends StatelessWidget {
     required this.upgrades,
     required this.onClick,
     required this.onLevelUp,
-  }): super(key: key);
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -55,9 +55,7 @@ class UpgradeScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Expanded(
-                      child: Container(),
-                    ),
+                    Expanded(child: Container()),
                   ],
                 ),
               ),
@@ -72,10 +70,7 @@ class UpgradeScreen extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final upgrade = upgrades[index];
                   return Container(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
+                    margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     padding: const EdgeInsets.all(8),
                     color: Colors.grey,
                     child: Row(
@@ -118,9 +113,7 @@ class UpgradeScreen extends StatelessWidget {
                           ),
                         ),
                         ElevatedButton(
-                          onPressed: monthlyListeners >= upgrade.cost 
-                              ? () => onLevelUp(index) 
-                              : null,
+                          onPressed: monthlyListeners >= upgrade.cost ? () => onLevelUp(index) : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.grey,
                             disabledBackgroundColor: Colors.grey.shade700,

@@ -14,7 +14,6 @@ class ClickerScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Top portion of the screen with listens count
         Container(
           height: 100,
           color: Colors.white,
@@ -23,14 +22,14 @@ class ClickerScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
-                'Прослушивания: ', // Display 'Прослушивания'
+                'Прослушивания: ',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               Text(
-                '$listensCount',    // Display the listens count
+                '$listensCount',
                 style: const TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.bold,
@@ -39,13 +38,11 @@ class ClickerScreen extends StatelessWidget {
             ],
           ),
         ),
-
-        // Invisible tapping zone (no visible UI)
         Expanded(
           child: GestureDetector(
-            onTap: onTap, // Tapping will call 'onTap' to increment the counter
+            onTap: onTap,
             child: Container(
-              color: Colors.transparent, // Invisible zone
+              color: Colors.transparent,
             ),
           ),
         ),

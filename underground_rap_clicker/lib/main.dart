@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 import 'models.dart';
 import 'screens/upgrade_screen.dart';
@@ -36,6 +37,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int baseListenersPerClick = 1;
   int passiveListenersPerSecond = 0;
 
+  // Расширенный список апгрейдов
   List<UpgradeItem> upgrades = [
     UpgradeItem(
       title: 'Make New Beat',
@@ -52,6 +54,20 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       increment: 2,
     ),
     UpgradeItem(
+      title: 'Collaborate with Top Artists',
+      type: 'click',
+      level: 1,
+      cost: 300,
+      increment: 3,
+    ),
+    UpgradeItem(
+      title: 'Upgrade Studio Equipment',
+      type: 'passive',
+      level: 1,
+      cost: 400,
+      increment: 2,
+    ),
+    UpgradeItem(
       title: 'Promote on Social',
       type: 'passive',
       level: 1,
@@ -63,6 +79,20 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       type: 'passive',
       level: 1,
       cost: 500,
+      increment: 2,
+    ),
+    UpgradeItem(
+      title: 'Social Media Campaign',
+      type: 'passive',
+      level: 1,
+      cost: 600,
+      increment: 3,
+    ),
+    UpgradeItem(
+      title: 'Viral Challenge',
+      type: 'click',
+      level: 1,
+      cost: 350,
       increment: 2,
     ),
   ];
@@ -82,6 +112,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   late SharedPreferences _prefs;
   int _selectedTabIndex = 0;
 
+  // Глобальный аудио плеер, который остаётся активным
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
   @override
   void initState() {
     super.initState();
@@ -92,8 +125,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
+    _audioPlayer.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -113,13 +147,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   void _loadData() {
     setState(() {
-      monthlyListeners = _prefs.getInt('monthlyListeners')?? 0;
-      baseListenersPerClick = _prefs.getInt('baseListenersPerClick')?? 1;
-      passiveListenersPerSecond =
-          _prefs.getInt('passiveListenersPerSecond')?? 0;
+      monthlyListeners = _prefs.getInt('monthlyListeners') ?? 0;
+      baseListenersPerClick = _prefs.getInt('baseListenersPerClick') ?? 1;
+      passiveListenersPerSecond = _prefs.getInt('passiveListenersPerSecond') ?? 0;
 
       final upgradesJson = _prefs.getString('upgrades');
-      if (upgradesJson!= null) {
+      if (upgradesJson != null) {
         try {
           final decoded = jsonDecode(upgradesJson) as List;
           upgrades = decoded.map((e) => UpgradeItem.fromMap(e)).toList();
@@ -129,7 +162,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       }
 
       final tracksJson = _prefs.getString('tracks');
-      if (tracksJson!= null) {
+      if (tracksJson != null) {
         try {
           final decoded = jsonDecode(tracksJson) as List;
           tracks = decoded.map((e) => Track.fromMap(e)).toList();
@@ -199,7 +232,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   void _updateTracks() {
     _saveData();
-    setState(() {}); // Refresh UI when tracks are updated
+    setState(() {}); // Обновляем UI, когда треки обновляются
   }
 
   @override
@@ -214,6 +247,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         onLevelUp: _handleLevelUp,
       ),
       MusicScreen(
+        audioPlayer: _audioPlayer,
         monthlyListeners: monthlyListeners,
         onSpend: _spendListeners,
         tracks: tracks,
