@@ -23,7 +23,6 @@ class UpgradeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey,
-      // Удалено выпадающее меню "upgrade" в AppBar
       body: Column(
         children: [
           Expanded(
@@ -56,7 +55,6 @@ class UpgradeScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    // Удален текст "Tap Here!" для обеспечения плавного нажатия по всей зоне
                     Expanded(
                       child: Container(),
                     ),
@@ -120,9 +118,12 @@ class UpgradeScreen extends StatelessWidget {
                           ),
                         ),
                         ElevatedButton(
-                          onPressed: () => onLevelUp(index),
+                          onPressed: monthlyListeners >= upgrade.cost 
+                              ? () => onLevelUp(index) 
+                              : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.grey,
+                            disabledBackgroundColor: Colors.grey.shade700,
                           ),
                           child: Text(
                             "Level Up\n+${upgrade.increment}",

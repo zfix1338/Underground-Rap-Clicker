@@ -2,7 +2,7 @@
 
 class UpgradeItem {
   String title;
-  String type; // 'click' или 'passive'
+  String type; // 'click' or 'passive'
   int level;
   int cost;
   int increment;
@@ -41,8 +41,8 @@ class Track {
   String artist;
   String duration;
   int cost;
-  String audioFile;  // Важно: "audio/blonde.mp3" (без "assets/")
-  String coverAsset; // "assets/images/blonde_cover.png"
+  String audioFile;  // Path format: "audio/blonde.mp3" (without "assets/")
+  String coverAsset; // Path format: "assets/images/blonde_cover.png"
   bool isUploaded;
   bool isPlaying;
 

@@ -73,7 +73,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       artist: 'osamason',
       duration: '2:24',
       cost: 10,
-      audioFile: 'audio/blonde.mp3', // Исправлен путь - удален ведущий слеш
+      audioFile: 'audio/blonde.mp3',
       coverAsset: 'assets/images/blonde_cover.png',
     ),
   ];
@@ -199,7 +199,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   void _updateTracks() {
     _saveData();
-    setState(() {}); // Добавлено обновление состояния
+    setState(() {}); // Refresh UI when tracks are updated
   }
 
   @override

@@ -27,21 +27,35 @@ class _MusicScreenState extends State<MusicScreen> {
   int _currentPlayingIndex = -1;
   Duration _currentPosition = Duration.zero;
   Duration _totalDuration = Duration.zero;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
 
+    // Check if any track was previously playing and restore state
+    for (int i = 0; i < widget.tracks.length; i++) {
+      if (widget.tracks[i].isPlaying) {
+        _currentPlayingIndex = i;
+        Future.microtask(() => _startTrackPlayback(i));
+        break;
+      }
+    }
+
     _audioPlayer.onPositionChanged.listen((pos) {
-      setState(() {
-        _currentPosition = pos;
-      });
+      if (mounted) {
+        setState(() {
+          _currentPosition = pos;
+        });
+      }
     });
 
     _audioPlayer.onDurationChanged.listen((dur) {
-      setState(() {
-        _totalDuration = dur;
-      });
+      if (mounted) {
+        setState(() {
+          _totalDuration = dur;
+        });
+      }
     });
 
     _audioPlayer.onPlayerStateChanged.listen((state) {
@@ -60,6 +74,8 @@ class _MusicScreenState extends State<MusicScreen> {
   }
 
   void _handleTrackEnd() {
+    if (!mounted) return;
+    
     setState(() {
       if (_currentPlayingIndex >= 0 && _currentPlayingIndex < widget.tracks.length) {
         widget.tracks[_currentPlayingIndex].isPlaying = false;
@@ -72,10 +88,13 @@ class _MusicScreenState extends State<MusicScreen> {
   }
 
   void _handleTrackStopped() {
+    if (!mounted) return;
+    
     setState(() {
       if (_currentPlayingIndex >= 0 && _currentPlayingIndex < widget.tracks.length) {
         widget.tracks[_currentPlayingIndex].isPlaying = false;
       }
+      _currentPlayingIndex = -1;
       _currentPosition = Duration.zero;
       _totalDuration = Duration.zero;
     });
@@ -83,62 +102,103 @@ class _MusicScreenState extends State<MusicScreen> {
   }
 
   Future<void> _startTrackPlayback(int index) async {
+    if (_isLoading) return;
+    
     final track = widget.tracks[index];
     if (!track.isUploaded) return;
-
-    if (_currentPlayingIndex != -1 && _currentPlayingIndex != index) {
-      setState(() {
-        widget.tracks[_currentPlayingIndex].isPlaying = false;
-      });
-      await _audioPlayer.stop();
-    }
+    
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
+      // Stop current playback if different track
+      if (_currentPlayingIndex != -1 && _currentPlayingIndex != index) {
+        setState(() {
+          widget.tracks[_currentPlayingIndex].isPlaying = false;
+        });
+        await _audioPlayer.stop();
+      }
+
+      // Reset player
+      await _audioPlayer.stop();
+      
+      // Set source and play
       if (kIsWeb) {
-        await _audioPlayer.setSource(UrlSource(track.audioFile));
+        await _audioPlayer.setSource(UrlSource('assets/${track.audioFile}'));
       } else {
-        // Исправлен путь к аудиофайлу - audioFile уже не содержит ведущий слеш
         await _audioPlayer.setSource(AssetSource(track.audioFile));
       }
+      
+      // Explicitly play the audio after setting the source
       await _audioPlayer.resume();
+      print("Audio player resumed successfully.");
 
-      setState(() {
-        track.isPlaying = true;
-        _currentPlayingIndex = index;
-      });
-      widget.onTrackUpdate?.call();
+      // Update UI state
+      if (mounted) {
+        setState(() {
+          track.isPlaying = true;
+          _currentPlayingIndex = index;
+          _isLoading = false;
+        });
+        
+        widget.onTrackUpdate?.call();
+      }
+      
+      // Debug output to confirm player state
+      final playerState = await _audioPlayer.state;
+      print("Audio player state: $playerState");
+      
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Playback error: $e")),
-      );
-      print("Playback error details: $e"); // Добавляем вывод ошибки для отладки
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Playback error: $e")),
+        );
+      }
+      print("Playback error details: $e");
     }
   }
 
   Future<void> _togglePlayPause(int index) async {
+    if (_isLoading) return;
+    
     final track = widget.tracks[index];
     if (!track.isUploaded) return;
 
-    if (track.isPlaying) {
-      await _audioPlayer.pause();
-      setState(() {
-        track.isPlaying = false;
-      });
-    } else {
-      if (_currentPlayingIndex == index) {
-        await _audioPlayer.resume();
+    try {
+      if (track.isPlaying) {
+        await _audioPlayer.pause();
         setState(() {
-          track.isPlaying = true;
+          track.isPlaying = false;
         });
       } else {
-        await _startTrackPlayback(index);
+        if (_currentPlayingIndex == index) {
+          await _audioPlayer.resume();
+          setState(() {
+            track.isPlaying = true;
+          });
+        } else {
+          await _startTrackPlayback(index);
+        }
       }
+      widget.onTrackUpdate?.call();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Toggle error: $e")),
+        );
+      }
+      print("Toggle error details: $e");
     }
-    widget.onTrackUpdate?.call();
   }
 
   Future<void> _uploadTrack(int index) async {
+    if (_isLoading) return;
+    
     final track = widget.tracks[index];
     if (widget.monthlyListeners < track.cost) {
       if (!mounted) return;
@@ -147,10 +207,13 @@ class _MusicScreenState extends State<MusicScreen> {
       );
       return;
     }
+    
     widget.onSpend?.call(track.cost);
     setState(() {
       track.isUploaded = true;
     });
+    
+    // Start playback immediately after upload
     await _startTrackPlayback(index);
     widget.onTrackUpdate?.call();
   }
@@ -258,10 +321,15 @@ class _MusicScreenState extends State<MusicScreen> {
                         )
                       else
                         IconButton(
-                          icon: Icon(
-                            track.isPlaying ? Icons.pause : Icons.play_arrow,
-                            color: Colors.white,
-                          ),
+                          icon: _isLoading && _currentPlayingIndex == index
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              )
+                            : Icon(
+                                track.isPlaying ? Icons.pause : Icons.play_arrow,
+                                color: Colors.white,
+                              ),
                           onPressed: () => _togglePlayPause(index),
                         ),
                     ],
@@ -275,7 +343,9 @@ class _MusicScreenState extends State<MusicScreen> {
                         : 1,
                       value: _currentPosition.inSeconds.toDouble().clamp(
                             0,
-                            _totalDuration.inSeconds.toDouble(),
+                            _totalDuration.inSeconds > 0 
+                            ? _totalDuration.inSeconds.toDouble() 
+                            : 1,
                           ),
                       activeColor: Colors.orange,
                       inactiveColor: Colors.grey,
