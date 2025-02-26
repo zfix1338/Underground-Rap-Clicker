@@ -37,7 +37,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int baseListenersPerClick = 1;
   int passiveListenersPerSecond = 0;
 
-  // Расширенный список апгрейдов
+  // Расширенный список апгрейдов (8 штук)
   List<UpgradeItem> upgrades = [
     UpgradeItem(
       title: 'Make New Beat',
@@ -97,14 +97,21 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     ),
   ];
 
-  List<Track> tracks = [
-    Track(
-      title: 'Blonde',
-      artist: 'osamason',
-      duration: '2:24',
-      cost: 10,
-      audioFile: 'audio/blonde.mp3',
+  // Вместо списка треков – список альбомов
+  List<Album> albums = [
+    Album(
+      title: 'FLex musix',
       coverAsset: 'assets/images/blonde_cover.png',
+      tracks: [
+        Track(
+          title: 'Blonde',
+          artist: 'osamason',
+          duration: '2:24',
+          cost: 10,
+          audioFile: 'audio/blonde.mp3',
+          coverAsset: 'assets/images/blonde_cover.png',
+        ),
+      ],
     ),
   ];
 
@@ -112,7 +119,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   late SharedPreferences _prefs;
   int _selectedTabIndex = 0;
 
-  // Глобальный аудио плеер, который остаётся активным
+  // Глобальный аудио плеер, который остаётся активным даже при переключении вкладок
   final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
@@ -160,16 +167,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           print('Error loading upgrades: $e');
         }
       }
-
-      final tracksJson = _prefs.getString('tracks');
-      if (tracksJson != null) {
-        try {
-          final decoded = jsonDecode(tracksJson) as List;
-          tracks = decoded.map((e) => Track.fromMap(e)).toList();
-        } catch (e) {
-          print('Error loading tracks: $e');
-        }
-      }
+      // Альбомы остаются статичными
     });
   }
 
@@ -180,9 +178,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
     final upgradesList = upgrades.map((u) => u.toMap()).toList();
     _prefs.setString('upgrades', jsonEncode(upgradesList));
-
-    final tracksList = tracks.map((t) => t.toMap()).toList();
-    _prefs.setString('tracks', jsonEncode(tracksList));
   }
 
   void _startPassiveIncomeTimer() {
@@ -230,9 +225,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
-  void _updateTracks() {
+  void _updateAlbums() {
     _saveData();
-    setState(() {}); // Обновляем UI, когда треки обновляются
+    setState(() {}); // Обновляем UI, когда изменяются данные альбомов/треков
   }
 
   @override
@@ -248,10 +243,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       ),
       MusicScreen(
         audioPlayer: _audioPlayer,
+        albums: albums,
         monthlyListeners: monthlyListeners,
         onSpend: _spendListeners,
-        tracks: tracks,
-        onTrackUpdate: _updateTracks,
+        onAlbumUpdate: _updateAlbums,
       ),
     ];
 

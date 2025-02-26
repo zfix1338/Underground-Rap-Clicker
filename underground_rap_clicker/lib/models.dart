@@ -83,3 +83,15 @@ class Track {
     };
   }
 }
+
+class Album {
+  String title;
+  String coverAsset;
+  List<Track> tracks;
+
+  Album({
+    required this.title,
+    required this.coverAsset,
+    required this.tracks,
+  });
+}
