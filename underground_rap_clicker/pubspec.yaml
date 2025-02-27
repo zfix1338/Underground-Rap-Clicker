@@ -24,3 +24,5 @@ flutter:
   assets:
     - assets/audio/blonde.mp3
     - assets/images/blonde_cover.png
+    - assets/images/background.png
+    - assets/images/osama.png

@@ -6,7 +6,7 @@ import 'album_detail_screen.dart';
 
 class MusicScreen extends StatelessWidget {
   final AudioPlayer audioPlayer; // Глобальный аудио плеер
-  final List<Album> albums; // Список альбомов вместо треков
+  final List<Album> albums; // Список альбомов
   final int monthlyListeners;
   final Function(int cost)? onSpend;
   final Function()? onAlbumUpdate;
@@ -23,7 +23,7 @@ class MusicScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey,
+      backgroundColor: Colors.grey[900],
       appBar: AppBar(
         title: const Text("Albums"),
         backgroundColor: Colors.black,
@@ -50,7 +50,10 @@ class MusicScreen extends StatelessWidget {
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               padding: const EdgeInsets.all(8),
-              color: Colors.grey,
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: Row(
                 children: [
                   // Обложка альбома

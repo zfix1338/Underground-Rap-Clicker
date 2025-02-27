@@ -92,7 +92,7 @@ class TracksScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${track.cost}€',
+                        '${track.cost}&euro;',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -101,7 +101,7 @@ class TracksScreen extends StatelessWidget {
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () {
-                          // Действие при нажатии
+                          // Действие при нажатии на кнопку
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.grey,

@@ -14,8 +14,9 @@ class ClickerScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        // Уменьшенный по высоте верхний счётчик
         Container(
-          height: 100,
+          height: 60,
           color: Colors.white,
           alignment: Alignment.center,
           child: Row(
@@ -24,14 +25,14 @@ class ClickerScreen extends StatelessWidget {
               const Text(
                 'Прослушивания: ',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               Text(
                 '$listensCount',
                 style: const TextStyle(
-                  fontSize: 36,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),

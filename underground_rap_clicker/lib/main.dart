@@ -27,7 +27,6 @@ class MyApp extends StatelessWidget {
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
-
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
@@ -37,7 +36,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int baseListenersPerClick = 1;
   int passiveListenersPerSecond = 0;
 
-  // Расширенный список апгрейдов (8 штук)
+  // Расширенный список апгрейдов.
+  // Новый апгрейд "Extra Click Boost" даёт +5 за клик, но его можно купить только если "Make New Beat" достиг 10-го уровня.
   List<UpgradeItem> upgrades = [
     UpgradeItem(
       title: 'Make New Beat',
@@ -95,9 +95,17 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       cost: 350,
       increment: 2,
     ),
+    // Новый апгрейд, который даёт +5 за клик; его можно купить только после того, как "Make New Beat" достигнет 10-го уровня
+    UpgradeItem(
+      title: 'Extra Click Boost',
+      type: 'click',
+      level: 0, // начинаем с 0, так как ещё не куплен
+      cost: 1000,
+      increment: 5,
+    ),
   ];
 
-  // Вместо списка треков – список альбомов
+  // Пример списка альбомов
   List<Album> albums = [
     Album(
       title: 'FLex musix',
@@ -118,8 +126,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Timer? _timer;
   late SharedPreferences _prefs;
   int _selectedTabIndex = 0;
-
-  // Глобальный аудио плеер, который остаётся активным даже при переключении вкладок
   final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
@@ -157,7 +163,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       monthlyListeners = _prefs.getInt('monthlyListeners') ?? 0;
       baseListenersPerClick = _prefs.getInt('baseListenersPerClick') ?? 1;
       passiveListenersPerSecond = _prefs.getInt('passiveListenersPerSecond') ?? 0;
-
       final upgradesJson = _prefs.getString('upgrades');
       if (upgradesJson != null) {
         try {
@@ -167,7 +172,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           print('Error loading upgrades: $e');
         }
       }
-      // Альбомы остаются статичными
     });
   }
 
@@ -175,7 +179,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     _prefs.setInt('monthlyListeners', monthlyListeners);
     _prefs.setInt('baseListenersPerClick', baseListenersPerClick);
     _prefs.setInt('passiveListenersPerSecond', passiveListenersPerSecond);
-
     final upgradesList = upgrades.map((u) => u.toMap()).toList();
     _prefs.setString('upgrades', jsonEncode(upgradesList));
   }
@@ -190,22 +193,40 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
+  // Обработка клика по персонажу
   void _handleClick() {
     setState(() {
       monthlyListeners += baseListenersPerClick;
     });
   }
 
+  // Покупка апгрейда; для "Extra Click Boost" проверяем зависимость
   void _handleLevelUp(int index) {
     final upgrade = upgrades[index];
+
+    // Если пытаемся купить "Extra Click Boost", проверяем, что "Make New Beat" достиг 10-го уровня
+    if (upgrade.title == 'Extra Click Boost') {
+      final makeNewBeat = upgrades.firstWhere((u) => u.title == 'Make New Beat', orElse: () => UpgradeItem(title: '', type: 'click', level: 0, cost: 0, increment: 0));
+      if (makeNewBeat.level < 10) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Разблокируйте Extra Click Boost, прокачав Make New Beat до 10 уровня!')),
+        );
+        return;
+      }
+    }
+
     if (monthlyListeners >= upgrade.cost) {
       setState(() {
         monthlyListeners -= upgrade.cost;
-        upgrade.level++;
+        // Если апгрейд типа "click"
         if (upgrade.type == 'click') {
+          // Для обычных апгрейдов увеличиваем базовый доход
           baseListenersPerClick += upgrade.increment;
+          // Для "Extra Click Boost" можем суммировать отдельно, здесь просто прибавляем +5 за клик
+          upgrade.level++;
         } else {
           passiveListenersPerSecond += upgrade.increment;
+          upgrade.level++;
         }
         upgrade.cost = (upgrade.cost * 1.5).round();
       });
@@ -227,7 +248,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   void _updateAlbums() {
     _saveData();
-    setState(() {}); // Обновляем UI, когда изменяются данные альбомов/треков
+    setState(() {}); // Обновляем UI при изменении данных альбомов/треков
   }
 
   @override
@@ -251,9 +272,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     ];
 
     return Scaffold(
-      body: SafeArea(
-        child: screens[_selectedTabIndex],
-      ),
+      body: SafeArea(child: screens[_selectedTabIndex]),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedTabIndex,
         onTap: _onItemTapped,

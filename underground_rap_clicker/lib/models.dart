@@ -6,6 +6,7 @@ class UpgradeItem {
   int level;
   int cost;
   int increment;
+  int unlockLevel; // Минимальный уровень игрока для разблокировки апгрейда
 
   UpgradeItem({
     required this.title,
@@ -13,6 +14,7 @@ class UpgradeItem {
     required this.level,
     required this.cost,
     required this.increment,
+    this.unlockLevel = 1,
   });
 
   factory UpgradeItem.fromMap(Map<String, dynamic> map) {
@@ -22,6 +24,7 @@ class UpgradeItem {
       level: map['level'],
       cost: map['cost'],
       increment: map['increment'],
+      unlockLevel: map['unlockLevel'] ?? 1,
     );
   }
 
@@ -32,6 +35,7 @@ class UpgradeItem {
       'level': level,
       'cost': cost,
       'increment': increment,
+      'unlockLevel': unlockLevel,
     };
   }
 }

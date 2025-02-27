@@ -36,10 +36,8 @@ class AlbumDetailScreenState extends State<AlbumDetailScreen> {
   void initState() {
     super.initState();
 
-    // Загружаем купленные треки из памяти
     _loadPurchasedTracks();
 
-    // Слушаем изменения позиции плеера (если не происходит перетаскивание)
     widget.audioPlayer.onPositionChanged.listen((pos) {
       if (mounted && !_isDragging) {
         setState(() {
@@ -49,7 +47,6 @@ class AlbumDetailScreenState extends State<AlbumDetailScreen> {
       }
     });
 
-    // Слушаем изменения длительности трека
     widget.audioPlayer.onDurationChanged.listen((dur) {
       if (mounted) {
         setState(() {
@@ -66,11 +63,9 @@ class AlbumDetailScreenState extends State<AlbumDetailScreen> {
       }
     });
 
-    // Инициализируем позицию и длительность трека
     _initSlider();
     _initDuration();
 
-    // Если какой-либо трек уже играет, сохраняем его индекс
     for (int i = 0; i < widget.album.tracks.length; i++) {
       if (widget.album.tracks[i].isPlaying) {
         _currentPlayingIndex = i;
@@ -89,7 +84,7 @@ class AlbumDetailScreenState extends State<AlbumDetailScreen> {
         });
       }
     } catch (e) {
-      // Бросаем ошибку, если надо
+      // Обработка ошибки, если необходимо
     }
   }
 
@@ -102,7 +97,7 @@ class AlbumDetailScreenState extends State<AlbumDetailScreen> {
         });
       }
     } catch (e) {
-      // Можно залогировать ошибку, если нужно
+      // Обработка ошибки, если необходимо
     }
   }
 
@@ -111,7 +106,6 @@ class AlbumDetailScreenState extends State<AlbumDetailScreen> {
     final purchasedIds = prefs.getStringList('purchasedTracks') ?? [];
     setState(() {
       for (var track in widget.album.tracks) {
-        // Если в модели Track нет поля id, используем track.title
         track.isUploaded = purchasedIds.contains(track.title);
       }
     });
@@ -129,8 +123,7 @@ class AlbumDetailScreenState extends State<AlbumDetailScreen> {
   void _handleTrackEnd() {
     if (!mounted) return;
     setState(() {
-      if (_currentPlayingIndex >= 0 &&
-          _currentPlayingIndex < widget.album.tracks.length) {
+      if (_currentPlayingIndex >= 0 && _currentPlayingIndex < widget.album.tracks.length) {
         widget.album.tracks[_currentPlayingIndex].isPlaying = false;
       }
       _currentPlayingIndex = -1;
@@ -228,7 +221,6 @@ class AlbumDetailScreenState extends State<AlbumDetailScreen> {
     setState(() {
       track.isUploaded = true;
     });
-    // Используем track.title как идентификатор
     await _savePurchasedTrack(track.title);
     await _startTrackPlayback(index);
     widget.onTrackUpdate?.call();
@@ -279,8 +271,7 @@ class AlbumDetailScreenState extends State<AlbumDetailScreen> {
           return GestureDetector(
             onTap: () => track.isUploaded ? _togglePlayPause(index) : null,
             child: Container(
-              margin:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               padding: const EdgeInsets.all(8),
               color: Colors.grey,
               child: Column(
@@ -387,16 +378,19 @@ class AlbumDetailScreenState extends State<AlbumDetailScreen> {
                         });
                         final newPos = Duration(seconds: value.toInt());
                         await widget.audioPlayer.seek(newPos);
+                        // Явно вызываем resume, чтобы трек не перезапускался с начала
+                        await widget.audioPlayer.resume();
+                        setState(() {
+                          _currentPosition = newPos;
+                          _sliderValue = newPos.inSeconds.toDouble();
+                        });
                       },
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          _formatDuration(Duration(
-                              seconds: _isDragging
-                                  ? _sliderValue.toInt()
-                                  : _currentPosition.inSeconds)),
+                          _formatDuration(_currentPosition),
                           style: const TextStyle(color: Colors.white70),
                         ),
                         Text(
