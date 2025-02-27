@@ -373,17 +373,33 @@ class AlbumDetailScreenState extends State<AlbumDetailScreen> {
                         });
                       },
                       onChangeEnd: (value) async {
-                        setState(() {
-                          _isDragging = false;
-                        });
-                        final newPos = Duration(seconds: value.toInt());
-                        await widget.audioPlayer.seek(newPos);
-                        // Явно вызываем resume, чтобы трек не перезапускался с начала
-                        await widget.audioPlayer.resume();
-                        setState(() {
-                          _currentPosition = newPos;
-                          _sliderValue = newPos.inSeconds.toDouble();
-                        });
+                        try {
+                          setState(() {
+                            _isDragging = false;
+                          });
+                          final newPos = Duration(seconds: value.toInt());
+                          
+                          // Сохраняем текущее состояние воспроизведения
+                          final wasPlaying = widget.album.tracks[_currentPlayingIndex].isPlaying;
+                          
+                          // Устанавливаем новую позицию
+                          await widget.audioPlayer.seek(newPos);
+                          
+                          // Если трек уже играл, продолжаем воспроизведение
+                          if (wasPlaying) {
+                            await widget.audioPlayer.resume();
+                          }
+                          
+                          if (mounted) {
+                            setState(() {
+                              _currentPosition = newPos;
+                              _sliderValue = value;
+                            });
+                          }
+                        } catch (e) {
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(SnackBar(content: Text("Seek error: $e")));
+                        }
                       },
                     ),
                     Row(

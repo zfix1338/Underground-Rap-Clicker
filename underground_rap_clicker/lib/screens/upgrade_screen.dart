@@ -79,7 +79,7 @@ class _UpgradeScreenState extends State<UpgradeScreen>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      "Монеты: ${widget.monthlyListeners}",
+                      "Слушателей: ${widget.monthlyListeners}",
                       style: const TextStyle(
                         fontSize: 16,
                         color: Colors.white,
