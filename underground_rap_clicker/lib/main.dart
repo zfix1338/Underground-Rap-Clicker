@@ -7,7 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 import 'models.dart';
-import 'screens/upgrade_screen.dart'; // Импорт теперь будет использоваться
+import 'screens/upgrade_screen.dart'; // Added import for UpgradeScreen
+// Импорт теперь будет использоваться
 import 'screens/music_screen.dart';
 
 // Главная функция приложения

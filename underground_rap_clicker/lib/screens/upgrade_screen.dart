@@ -1,186 +1,123 @@
-// START OF FULL UPDATED FILE underground_rap_clicker/lib/widgets/upgrade_item.dart
+// START OF FULL FILE underground_rap_clicker/lib/screens/upgrade_screen.dart
 import 'package:flutter/material.dart';
-// import 'package:google_fonts/google_fonts.dart'; // Убран импорт GoogleFonts
+import '../models.dart'; // Убедитесь, что путь к models.dart верный
+import '../widgets/upgrade_item.dart'; // Убедитесь, что путь к upgrade_item.dart верный
 
-// --- Пути к ассетам (убедитесь, что имена файлов верны) ---
-const String upgradeRowBgPath = 'assets/images/upgrade_row_bg.png';
-const String upgradeButtonActivePath = 'assets/images/upgrade_button_active.png';
+// --- Пути к ассетам (Проверьте имена ваших файлов!) ---
+const String gameBackgroundPath = 'assets/images/game_background.png';
+const String clickableRapperPath = 'assets/images/clickable_rapper.png';
 const String cloutCoinPath = 'assets/images/clout_coin.png';
-// ---------------------------------------------
+// ------------------------------------------------------
 
-class UpgradeItemWidget extends StatefulWidget {
-  final String title;
-  final int cost;
-  final int currentLevel;
-  final double upgradeGain;
-  final int currentClout;
-  final VoidCallback onUpgrade;
+// --- Убедитесь, что класс называется ИМЕННО ТАК и наследуется от StatelessWidget ---
+class UpgradeScreen extends StatelessWidget {
+  final int monthlyListeners;
+  final int baseListenersPerClick;
+  final int passiveListenersPerSecond;
+  final List<UpgradeItem> upgrades;
+  final VoidCallback onClick;
+  final Function(int) onLevelUp;
 
-  const UpgradeItemWidget({
+  // --- Убедитесь, что конструктор называется ТАК ЖЕ, как класс ---
+  const UpgradeScreen({
     super.key,
-    required this.title,
-    required this.cost,
-    required this.currentLevel,
-    required this.upgradeGain,
-    required this.currentClout,
-    required this.onUpgrade,
+    required this.monthlyListeners,
+    required this.baseListenersPerClick,
+    required this.passiveListenersPerSecond,
+    required this.upgrades,
+    required this.onClick,
+    required this.onLevelUp,
   });
-
-  @override
-  State<UpgradeItemWidget> createState() => _UpgradeItemWidgetState();
-}
-
-class _UpgradeItemWidgetState extends State<UpgradeItemWidget> {
-  bool _isPressed = false;
+  // ----------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
-    final bool canAfford = widget.currentClout >= widget.cost;
-    final double buttonScale = _isPressed ? 0.95 : 1.0;
-
-    // Получаем текстовую тему (шрифт Galindo уже применен глобально)
     final textTheme = Theme.of(context).textTheme;
-
-    // --- Определяем стили на основе темы ---
-    // Используем подходящие базовые стили и настраиваем их
-    final titleStyle = textTheme.titleMedium?.copyWith( // titleMedium может подойти лучше для заголовка
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 13.5, // Размер, подобранный ранее
-        );
-    final detailStyle = textTheme.bodyMedium?.copyWith(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        );
-     final levelTextStyle = textTheme.bodySmall?.copyWith(
-          color: Colors.grey[400],
-          fontSize: 11,
-     );
-     const double iconSize = 14.0;
-
-    // Стили для кнопки, также на основе темы
-    final levelUpTextStyle = textTheme.labelLarge?.copyWith( // labelLarge часто используется для кнопок
-        fontSize: 14,
-        fontWeight: FontWeight.bold,
-        color: const Color(0xFF6A3A1B), // Темно-коричневый цвет текста кнопки
-        fontFamily: 'Galindo', // Можно явно указать, если тема не применилась
+    final counterTextStyle = textTheme.bodyMedium?.copyWith(
+      color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13,
+      shadows: [ Shadow( blurRadius: 2.0, color: Colors.black.withOpacity(0.7), offset: const Offset(1.0, 1.0)) ]
     );
-     final gainTextStyle = textTheme.bodySmall?.copyWith( // bodySmall или labelMedium для подписи
-        fontSize: 13,
-        fontWeight: FontWeight.bold,
-        color: const Color(0xFFFFF0B0), // Светло-желтый цвет текста прироста
-        fontFamily: 'Galindo', // Можно явно указать
+    final mainCounterStyle = textTheme.headlineSmall?.copyWith(
+      color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20,
+      shadows: [ Shadow( blurRadius: 3.0, color: Colors.black.withOpacity(0.8), offset: const Offset(1.5, 1.5)) ]
     );
-    // -----------------------------------------
 
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 3.0), // Вертикальный отступ между рядами
-      height: 78, // Высота ряда (может потребоваться подстройка)
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // 1. Фоновое изображение ряда
-          Image.asset(
-            upgradeRowBgPath, // Путь к фону ряда
-            fit: BoxFit.fill,   // Растянуть фон на весь контейнер
-            width: double.infinity,
+    // Основная структура Column
+    return Column(
+      children: [
+        // --- Верхняя секция ---
+        Expanded(
+          flex: 5,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Фоновое изображение
+              Positioned.fill(
+                child: Image.asset( gameBackgroundPath, fit: BoxFit.cover, alignment: Alignment.topCenter ),
+              ),
+              // Верхний ряд счетчиков
+              Positioned(
+                top: 5, left: 0, right: 0,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 5.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Row( mainAxisSize: MainAxisSize.min, children: [
+                          const Icon(Icons.touch_app, color: Colors.white, size: 16), const SizedBox(width: 4),
+                          Text('+${baseListenersPerClick}/tap', style: counterTextStyle),
+                        ] ),
+                      Row( mainAxisSize: MainAxisSize.min, children: [
+                          Image.asset(cloutCoinPath, width: 24, height: 24), const SizedBox(width: 8),
+                          Text(monthlyListeners.toString(), style: mainCounterStyle),
+                        ] ),
+                      Row( mainAxisSize: MainAxisSize.min, children: [
+                          const Icon(Icons.timer, color: Colors.white, size: 16), const SizedBox(width: 4),
+                          Text('+${passiveListenersPerSecond}/sec', style: counterTextStyle),
+                        ] ),
+                    ],
+                  ),
+                ),
+              ),
+              // Кликабельный Рэпер
+              Center(
+                child: GestureDetector(
+                  onTap: onClick,
+                  child: Image.asset( clickableRapperPath, height: MediaQuery.of(context).size.height * 0.30, fit: BoxFit.contain ),
+                ),
+              ),
+            ],
           ),
-
-          // 2. Контент поверх фона
-          Positioned.fill(
+        ),
+        // --- Нижняя секция (Список апгрейдов) ---
+        Expanded(
+          flex: 6,
+          child: Container(
+            color: Colors.grey[850], // Серый фон для списка
             child: Padding(
-              // Внутренние отступы контента от краев фона
-              padding: const EdgeInsets.only(left: 15.0, right: 10.0, top: 6.0, bottom: 6.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween, // Распределить место
-                crossAxisAlignment: CrossAxisAlignment.center,      // Выровнять по вертикали
-                children: [
-                  // Левая часть: Название, Стоимость, Уровень
-                  Expanded(
-                    flex: 10, // Дать больше места тексту
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,  // Выровнять текст влево
-                      mainAxisAlignment: MainAxisAlignment.center, // Центрировать по вертикали
-                      children: [
-                        // Название апгрейда
-                        Text(
-                          widget.title,
-                          style: titleStyle,
-                          maxLines: 2, // Позволить перенос на 2 строки
-                          overflow: TextOverflow.ellipsis, // Многоточие, если не влезает
-                        ),
-                        const SizedBox(height: 3), // Маленький отступ
-                        // Строка со стоимостью и уровнем
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Image.asset(cloutCoinPath, width: iconSize, height: iconSize), // Иконка монеты
-                            const SizedBox(width: 4),
-                            Text(widget.cost.toString(), style: detailStyle), // Стоимость
-                            const SizedBox(width: 8),
-                            Text('Level ${widget.currentLevel}', style: levelTextStyle), // Уровень
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(flex: 1), // Небольшой гибкий отступ
-
-                  // Правая часть: Кнопка Level Up
-                  Expanded(
-                    flex: 5, // Дать меньше места кнопке
-                    child: GestureDetector( // Для обработки нажатий
-                      onTapDown: canAfford ? (_) => setState(() => _isPressed = true) : null, // Нажатие вниз (если можно купить)
-                      onTapUp: canAfford ? (_) { // Отпускание пальца (если можно купить)
-                        setState(() => _isPressed = false);
-                        widget.onUpgrade(); // Вызов функции апгрейда
-                      } : null,
-                      onTapCancel: canAfford ? () => setState(() => _isPressed = false) : null, // Отмена нажатия
-                      child: Transform.scale( // Для визуального эффекта нажатия
-                        scale: buttonScale,
-                        child: Stack( // Для наложения текста на спрайт кнопки
-                          alignment: Alignment.center,
-                          children: [
-                            // Спрайт кнопки
-                            ColorFiltered( // Применяем фильтр, если нельзя купить
-                              colorFilter: ColorFilter.mode(
-                                canAfford ? Colors.transparent : Colors.grey, // Прозрачный или серый
-                                canAfford ? BlendMode.dst : BlendMode.saturation, // Режим наложения
-                              ),
-                              child: Image.asset(
-                                upgradeButtonActivePath, // Путь к спрайту кнопки
-                                height: 48, // Высота кнопки
-                                fit: BoxFit.contain, // Масштабирование спрайта
-                              ),
-                            ),
-                            // Текст "Level Up" поверх кнопки
-                            Positioned(
-                              top: 5, // Подгонка положения текста
-                              child: Text('Level Up', style: levelUpTextStyle),
-                            ),
-                            // Текст "+ Прирост" поверх кнопки
-                            Positioned(
-                              bottom: 8, // Подгонка положения текста
-                              child: Text(
-                                // Форматируем число: показываем .0 только если нужно
-                                '+${widget.upgradeGain.toStringAsFixed(widget.upgradeGain.truncateToDouble() == widget.upgradeGain ? 1 : 2)}',
-                                style: gainTextStyle,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              padding: const EdgeInsets.only(bottom: 5.0, left: 15.0, right: 15.0, top: 10.0),
+              child: ListView.builder(
+                itemCount: upgrades.length,
+                itemBuilder: (context, index) {
+                  final upgrade = upgrades[index];
+                  // Используем виджет UpgradeItemWidget
+                  return UpgradeItemWidget(
+                    key: ValueKey(upgrade.title + upgrade.level.toString()),
+                    title: upgrade.title,
+                    cost: upgrade.cost,
+                    currentLevel: upgrade.level,
+                    upgradeGain: upgrade.increment.toDouble(),
+                    currentClout: monthlyListeners,
+                    onUpgrade: () => onLevelUp(index),
+                  );
+                },
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
-// END OF FULL UPDATED FILE underground_rap_clicker/lib/widgets/upgrade_item.dart
+// END OF FULL FILE underground_rap_clicker/lib/screens/upgrade_screen.dart
