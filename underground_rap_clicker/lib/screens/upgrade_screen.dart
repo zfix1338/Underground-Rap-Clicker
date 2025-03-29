@@ -1,13 +1,13 @@
-// START OF FULL FILE underground_rap_clicker/lib/screens/upgrade_screen.dart
+// START OF REVISED FILE underground_rap_clicker/lib/screens/upgrade_screen.dart
 import 'package:flutter/material.dart';
-import '../models.dart'; // Убедитесь, что путь к models.dart верный
-import '../widgets/upgrade_item.dart'; // Убедитесь, что путь к upgrade_item.dart верный
+import '../models.dart';
+import '../widgets/upgrade_item.dart';
 
-// --- Пути к ассетам (Проверьте имена ваших файлов!) ---
+// --- Пути к ассетам ---
 const String gameBackgroundPath = 'assets/images/game_background.png';
 const String clickableRapperPath = 'assets/images/clickable_rapper.png';
 const String cloutCoinPath = 'assets/images/clout_coin.png';
-// ------------------------------------------------------
+// ---------------------
 
 class UpgradeScreen extends StatelessWidget {
   final int monthlyListeners;
@@ -17,7 +17,6 @@ class UpgradeScreen extends StatelessWidget {
   final VoidCallback onClick;
   final Function(int) onLevelUp;
 
-  // Конструктор с required параметрами
   const UpgradeScreen({
     super.key,
     required this.monthlyListeners,
@@ -31,7 +30,6 @@ class UpgradeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    // Стили для счетчиков
     final counterTextStyle = textTheme.bodyMedium?.copyWith(
       color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13,
       shadows: [ Shadow( blurRadius: 2.0, color: Colors.black.withOpacity(0.7), offset: const Offset(1.0, 1.0)) ]
@@ -41,20 +39,17 @@ class UpgradeScreen extends StatelessWidget {
       shadows: [ Shadow( blurRadius: 3.0, color: Colors.black.withOpacity(0.8), offset: const Offset(1.5, 1.5)) ]
     );
 
-    // Основная структура Column
-    return Column(
+    return Column( // Основной виджет - Column
       children: [
-        // --- Верхняя секция ---
+        // --- Верхняя секция (без изменений) ---
         Expanded(
-          flex: 5, // Настройте соотношение по вкусу
+          flex: 5, // Настройте соотношение
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // Фоновое изображение (ограничено этой областью)
               Positioned.fill(
                 child: Image.asset( gameBackgroundPath, fit: BoxFit.cover, alignment: Alignment.topCenter ),
               ),
-              // Верхний ряд счетчиков
               Positioned(
                 top: 5, left: 0, right: 0,
                 child: Padding(
@@ -63,18 +58,15 @@ class UpgradeScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // /tap
-                      Row( mainAxisSize: MainAxisSize.min, children: [
+                       Row( mainAxisSize: MainAxisSize.min, children: [
                           const Icon(Icons.touch_app, color: Colors.white, size: 16), const SizedBox(width: 4),
                           Text('+${baseListenersPerClick}/tap', style: counterTextStyle),
                         ] ),
-                      // Общее кол-во
-                      Row( mainAxisSize: MainAxisSize.min, children: [
+                       Row( mainAxisSize: MainAxisSize.min, children: [
                           Image.asset(cloutCoinPath, width: 24, height: 24), const SizedBox(width: 8),
                           Text(monthlyListeners.toString(), style: mainCounterStyle),
                         ] ),
-                      // /sec
-                      Row( mainAxisSize: MainAxisSize.min, children: [
+                       Row( mainAxisSize: MainAxisSize.min, children: [
                           const Icon(Icons.timer, color: Colors.white, size: 16), const SizedBox(width: 4),
                           Text('+${passiveListenersPerSecond}/sec', style: counterTextStyle),
                         ] ),
@@ -82,7 +74,6 @@ class UpgradeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              // Кликабельный Рэпер
               Center(
                 child: GestureDetector(
                   onTap: onClick,
@@ -92,38 +83,37 @@ class UpgradeScreen extends StatelessWidget {
             ],
           ),
         ),
+
         // --- Нижняя секция (Список апгрейдов) ---
+        // Оборачиваем Container + ListView в Expanded, чтобы он занял оставшееся место
         Expanded(
-          flex: 6, // Настройте соотношение по вкусу
+          flex: 6, // Настройте соотношение
           child: Container(
             width: double.infinity, // Занять всю ширину
-            color: Colors.grey[850], // Серый фон
+            color: Colors.grey[850], // Серый фон для этой области
             child: Padding(
               padding: const EdgeInsets.only(bottom: 5.0, left: 15.0, right: 15.0, top: 10.0),
-              child: LayoutBuilder( // Используем LayoutBuilder
-                builder: (context, constraints) {
-                  // Если список пустой, показываем заглушку
-                  if (upgrades.isEmpty) {
-                    return const Center(child: Text("No upgrades available.", style: TextStyle(color: Colors.white54)));
+              // ListView.builder остается без LayoutBuilder и shrinkWrap
+              child: ListView.builder(
+                itemCount: upgrades.length,
+                itemBuilder: (context, index) {
+                  // Если список пуст (проверка на всякий случай)
+                  if (upgrades.isEmpty && index == 0) {
+                     return const Center(child: Text("No upgrades available.", style: TextStyle(color: Colors.white54)));
                   }
-                  // Используем ListView.builder
-                  return ListView.builder(
-                    itemCount: upgrades.length,
-                    itemBuilder: (context, index) {
-                      final upgrade = upgrades[index];
-                      // Используем виджет UpgradeItemWidget
-                      return UpgradeItemWidget(
-                        key: ValueKey(upgrade.title + upgrade.level.toString()),
-                        title: upgrade.title,
-                        cost: upgrade.cost,
-                        currentLevel: upgrade.level,
-                        upgradeGain: upgrade.increment.toDouble(),
-                        currentClout: monthlyListeners,
-                        onUpgrade: () => onLevelUp(index),
-                      );
-                    },
+                  if (index >= upgrades.length) return null; // Защита от выхода за пределы
+
+                  final upgrade = upgrades[index];
+                  return UpgradeItemWidget(
+                    key: ValueKey(upgrade.title + upgrade.level.toString()),
+                    title: upgrade.title,
+                    cost: upgrade.cost,
+                    currentLevel: upgrade.level,
+                    upgradeGain: upgrade.increment.toDouble(),
+                    currentClout: monthlyListeners,
+                    onUpgrade: () => onLevelUp(index),
                   );
-                }
+                },
               ),
             ),
           ),
@@ -132,4 +122,4 @@ class UpgradeScreen extends StatelessWidget {
     );
   }
 }
-// END OF FULL FILE underground_rap_clicker/lib/screens/upgrade_screen.dart
+// END OF REVISED FILE underground_rap_clicker/lib/screens/upgrade_screen.dart
