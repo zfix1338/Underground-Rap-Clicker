@@ -39,82 +39,53 @@ class UpgradeScreen extends StatelessWidget {
       shadows: [ Shadow( blurRadius: 3.0, color: Colors.black.withOpacity(0.8), offset: const Offset(1.5, 1.5)) ]
     );
 
-    // Используем Column как корневой элемент экрана
+    // --- Используем Column как корневой элемент ---
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch, // Растянуть дочерние по ширине
       children: [
-        // --- Верхняя секция (Кликабельная область) ---
-        // НЕ используем Expanded здесь, дадим Stack определить высоту через контент
-        SizedBox( // Задаем высоту для верхней части явно или через MediaQuery
-           height: MediaQuery.of(context).size.height * 0.45, // Примерно 45% высоты экрана
+        // --- Верхняя секция (можно оставить Expanded или задать высоту через SizedBox) ---
+        // Вариант с Expanded (более гибкий):
+        Expanded(
+           flex: 5, // Пропорция для верхней части
            child: Stack(
             alignment: Alignment.center,
             children: [
-              // Фоновое изображение
-              Positioned.fill(
-                child: Image.asset( gameBackgroundPath, fit: BoxFit.cover, alignment: Alignment.topCenter ),
-              ),
-              // Верхний ряд счетчиков
-              Positioned(
-                top: 5, left: 0, right: 0,
-                child: Padding(
+              Positioned.fill( child: Image.asset( gameBackgroundPath, fit: BoxFit.cover, alignment: Alignment.topCenter ) ),
+              Positioned( top: 5, left: 0, right: 0, child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 5.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Row( mainAxisSize: MainAxisSize.min, children: [
-                          const Icon(Icons.touch_app, color: Colors.white, size: 16), const SizedBox(width: 4),
-                          Text('+${baseListenersPerClick}/tap', style: counterTextStyle),
-                        ] ),
-                      Row( mainAxisSize: MainAxisSize.min, children: [
-                          Image.asset(cloutCoinPath, width: 24, height: 24), const SizedBox(width: 8),
-                          Text(monthlyListeners.toString(), style: mainCounterStyle),
-                        ] ),
-                      Row( mainAxisSize: MainAxisSize.min, children: [
-                          const Icon(Icons.timer, color: Colors.white, size: 16), const SizedBox(width: 4),
-                          Text('+${passiveListenersPerSecond}/sec', style: counterTextStyle),
-                        ] ),
-                    ],
-                  ),
-                ),
-              ),
-              // Кликабельный Рэпер
-              Center(
-                child: Padding( // Добавляем небольшой отступ снизу, если нужно
-                  padding: const EdgeInsets.only(bottom: 10.0), // Настройте отступ
-                  child: GestureDetector(
+                  child: Row( mainAxisAlignment: MainAxisAlignment.spaceBetween, crossAxisAlignment: CrossAxisAlignment.center, children: [
+                      Row( mainAxisSize: MainAxisSize.min, children: [ const Icon(Icons.touch_app, color: Colors.white, size: 16), const SizedBox(width: 4), Text('+${baseListenersPerClick}/tap', style: counterTextStyle), ] ),
+                      Row( mainAxisSize: MainAxisSize.min, children: [ Image.asset(cloutCoinPath, width: 24, height: 24), const SizedBox(width: 8), Text(monthlyListeners.toString(), style: mainCounterStyle), ] ),
+                      Row( mainAxisSize: MainAxisSize.min, children: [ const Icon(Icons.timer, color: Colors.white, size: 16), const SizedBox(width: 4), Text('+${passiveListenersPerSecond}/sec', style: counterTextStyle), ] ),
+                    ], ), ), ),
+              Center( child: Padding( padding: const EdgeInsets.only(bottom: 10.0), child: GestureDetector(
                     onTap: onClick,
                     child: Image.asset( clickableRapperPath, height: MediaQuery.of(context).size.height * 0.30, fit: BoxFit.contain ),
-                  ),
-                ),
-              ),
+                  ), ), ),
             ],
           ),
         ),
 
         // --- Нижняя секция (Список апгрейдов) ---
-        // ИСПОЛЬЗУЕМ Expanded ЗДЕСЬ, чтобы ListView занял все ОСТАВШЕЕСЯ пространство
+        // Оборачиваем Container, содержащий ListView, в Expanded
         Expanded(
-          // flex не нужен, так как верхняя часть имеет фиксированную высоту
-          child: Container(
-            width: double.infinity, // Занять всю ширину
-            color: Colors.grey[850], // Серый фон
-            child: Padding(
+          flex: 6, // Пропорция для нижней части
+          child: Container( // Контейнер с фоном
+            width: double.infinity,
+            color: Colors.grey[850],
+            child: Padding( // Отступы для списка
               padding: const EdgeInsets.only(bottom: 5.0, left: 15.0, right: 15.0, top: 10.0),
-              // ListView.builder напрямую в Expanded + Container
-              child: ListView.builder(
-                // physics: const AlwaysScrollableScrollPhysics(), // Можно добавить для надежности
-                padding: EdgeInsets.zero, // Убираем внешние отступы ListView
-                itemCount: upgrades.length,
-                itemBuilder: (context, index) {
-                  // Если список пуст (проверка)
-                  if (upgrades.isEmpty && index == 0) {
-                    return const Center(child: Text("No upgrades...", style: TextStyle(color: Colors.white54)));
+              child: ListView.builder( // ListView БЕЗ Expanded или SizedBox
+                // physics: const AlwaysScrollableScrollPhysics(), // Можно добавить
+                 padding: EdgeInsets.zero,
+                 itemCount: upgrades.isNotEmpty ? upgrades.length : 1,
+                 itemBuilder: (context, index) {
+                  if (upgrades.isEmpty) {
+                    return const Center( heightFactor: 5, child: Text("No upgrades...", style: TextStyle(color: Colors.white54)) );
                   }
-                   if (index >= upgrades.length) return null; // Защита
+                  //if (index >= upgrades.length) return null; // itemCount должен это обрабатывать
 
                   final upgrade = upgrades[index];
-                  // Возвращаем ваш кастомный виджет
                   return UpgradeItemWidget(
                     key: ValueKey('${upgrade.title}-${upgrade.level}-${upgrade.cost}'),
                     title: upgrade.title,
