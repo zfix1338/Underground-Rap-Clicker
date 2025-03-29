@@ -1,28 +1,72 @@
+# START OF FILE underground_rap_clicker/pubspec.yaml
 name: underground_rap_clicker
 description: "A new Flutter project."
+# Prevent accidental publishing to pub.dev.
 publish_to: 'none'
 version: 1.0.0+1
 
 environment:
+  # Ensure your Dart SDK version meets this requirement or adjust as needed.
+  # Google Fonts package generally requires a recent SDK.
   sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
-  shared_preferences: ^2.0.15
-  audioplayers: ^6.1.0
+  cupertino_icons: ^1.0.8 # Keeping your existing version
+  shared_preferences: ^2.0.15 # Keeping your existing version (Note: ^2.5.2 is latest)
+  audioplayers: ^6.1.0       # Keeping your existing version (Note: ^6.2.0 is latest)
+
+  # --- Added Google Fonts Dependency ---
+  google_fonts: ^6.2.1 # Use the latest version from pub.dev if desired
+  # -------------------------------------
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
+  flutter_lints: ^2.0.0 # Keeping your existing version (Note: ^4.0.0 is latest)
 
+# The following section is specific to Flutter packages.
 flutter:
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
   uses-material-design: true
 
+  # To add assets to your application, add an assets section, like this:
   assets:
     - assets/audio/blonde.mp3
     - assets/images/blonde_cover.png
-    - assets/images/background.png
-    - assets/images/osama.png
+    - assets/images/game_background.png # Or walmart_background.png
+    - assets/images/clickable_rapper.png # Or rapper.png
+    - assets/images/clout_coin.png       # Or coin.png
+    - assets/images/upgrade_row_bg.png   # Or upgrade_row.png
+    - assets/images/upgrade_button_active.png # Or level_up_button.png
+
+
+  # An image asset can refer to one or more resolution-specific "variants".
+  # See https://flutter.dev/assets-and-images/#resolution-aware
+
+  # For details regarding adding assets from package dependencies, see
+  # https://flutter.dev/assets-and-images/#from-packages
+
+  # To add custom fonts to your application, add a fonts section here,
+  # in this "flutter" section. Each entry in this list should have a
+  # "family" key with the font family name, and a "fonts" key with a
+  # list giving the asset and other descriptors for the font. For
+  # example:
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
+  #       - asset: fonts/Schyler-Italic.ttf
+  #         style: italic
+  #   - family: Trajan Pro
+  #     fonts:
+  #       - asset: fonts/TrajanPro.ttf
+  #       - asset: fonts/TrajanPro_Bold.ttf
+  #         weight: 700
+  #
+  # For details regarding fonts from package dependencies,
+  # see https://flutter.dev/custom-fonts/#from-packages
+# END OF FILE underground_rap_clicker/pubspec.yaml
