@@ -1,11 +1,12 @@
+// START OF CORRECTED FILE underground_rap_clicker/lib/widgets/upgrade_item.dart
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+// import 'package:google_fonts/google_fonts.dart'; // Убедитесь, что эта строка удалена или закомментирована
 
-// --- Пути к ассетам (используйте ваши реальные имена файлов) ---
+// --- Пути к ассетам ---
 const String upgradeRowBgPath = 'assets/images/upgrade_row_bg.png';
 const String upgradeButtonActivePath = 'assets/images/upgrade_button_active.png';
 const String cloutCoinPath = 'assets/images/clout_coin.png';
-// ---------------------------------------------
+// ---------------------
 
 class UpgradeItemWidget extends StatefulWidget {
   final String title;
@@ -37,39 +38,45 @@ class _UpgradeItemWidgetState extends State<UpgradeItemWidget> {
     final bool canAfford = widget.currentClout >= widget.cost;
     final double buttonScale = _isPressed ? 0.95 : 1.0;
 
-    // Стили текста (уже используют Galindo из темы)
-    final titleStyle = Theme.of(context).textTheme.bodyLarge?.copyWith(
+    // Получаем текстовую тему (шрифт Galindo применен глобально в main.dart)
+    final textTheme = Theme.of(context).textTheme;
+
+    // --- Определяем стили на основе темы ---
+    final titleStyle = textTheme.titleMedium?.copyWith(
           color: Colors.white,
           fontWeight: FontWeight.bold,
           fontSize: 13.5,
         );
-    final detailStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+    final detailStyle = textTheme.bodyMedium?.copyWith(
           color: Colors.white,
           fontWeight: FontWeight.bold,
           fontSize: 12,
         );
-     final levelTextStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+     final levelTextStyle = textTheme.bodySmall?.copyWith(
           color: Colors.grey[400],
           fontSize: 11,
      );
      const double iconSize = 14.0;
 
-    // Стили для кнопки (можно использовать GoogleFonts явно, если нужно)
-    final levelUpTextStyle = GoogleFonts.galindo(
+    // Стили для кнопки, также на основе темы. Убраны явные вызовы GoogleFonts
+    final levelUpTextStyle = textTheme.labelLarge?.copyWith(
         fontSize: 14,
         fontWeight: FontWeight.bold,
-        color: const Color(0xFF6A3A1B), // Темно-коричневый из кнопки
+        color: const Color(0xFF6A3A1B),
+        // fontFamily: 'Galindo', // Можно раскомментировать, если шрифт темы не подхватывается
     );
-     final gainTextStyle = GoogleFonts.galindo(
+     final gainTextStyle = textTheme.bodySmall?.copyWith(
         fontSize: 13,
         fontWeight: FontWeight.bold,
-        color: const Color(0xFFFFF0B0), // Светло-желтый из кнопки
+        color: const Color(0xFFFFF0B0),
+        // fontFamily: 'Galindo', // Можно раскомментировать, если шрифт темы не подхватывается
     );
+    // -----------------------------------------
 
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 3.0),
-      height: 78, // Высота строки
+      height: 78,
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -88,19 +95,14 @@ class _UpgradeItemWidgetState extends State<UpgradeItemWidget> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Левая часть: Название, Стоимость, Уровень
+                  // Левая часть
                   Expanded(
                     flex: 10,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          widget.title,
-                          style: titleStyle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        Text( widget.title, style: titleStyle, maxLines: 2, overflow: TextOverflow.ellipsis ),
                         const SizedBox(height: 3),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -115,46 +117,33 @@ class _UpgradeItemWidgetState extends State<UpgradeItemWidget> {
                       ],
                     ),
                   ),
-                  const Spacer(flex: 1), // Небольшой отступ
+                  const Spacer(flex: 1),
 
-                  // Правая часть: Кнопка Level Up
-                  // --- Возвращаем логику с GestureDetector и спрайтом ---
+                  // Правая часть (Кнопка)
                   Expanded(
                     flex: 5,
-                    child: GestureDetector( // Обертка для обработки нажатий
+                    child: GestureDetector(
                       onTapDown: canAfford ? (_) => setState(() => _isPressed = true) : null,
-                      onTapUp: canAfford ? (_) {
-                        setState(() => _isPressed = false);
-                        widget.onUpgrade(); // Вызов функции апгрейда
-                      } : null,
+                      onTapUp: canAfford ? (_) { setState(() => _isPressed = false); widget.onUpgrade(); } : null,
                       onTapCancel: canAfford ? () => setState(() => _isPressed = false) : null,
-                      child: Transform.scale( // Для эффекта нажатия
+                      child: Transform.scale(
                         scale: buttonScale,
-                        child: Stack( // Используем Stack для наложения текста на спрайт
+                        child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            // Спрайт кнопки (окрашивается если недоступно)
+                            // Спрайт кнопки
                             ColorFiltered(
                               colorFilter: ColorFilter.mode(
                                 canAfford ? Colors.transparent : Colors.grey,
                                 canAfford ? BlendMode.dst : BlendMode.saturation,
                               ),
-                              child: Image.asset(
-                                upgradeButtonActivePath, // Путь к спрайту кнопки
-                                height: 48, // Высота спрайта кнопки
-                                fit: BoxFit.contain, // Или BoxFit.fill
-                              ),
+                              child: Image.asset( upgradeButtonActivePath, height: 48, fit: BoxFit.contain ),
                             ),
-                            // Текст "Level Up" поверх спрайта
-                            Positioned(
-                              top: 5, // Точная подгонка положения
-                              child: Text('Level Up', style: levelUpTextStyle),
-                            ),
-                            // Текст "+ Прирост" поверх спрайта
-                            Positioned(
-                              bottom: 8, // Точная подгонка положения
-                              child: Text(
-                                '+${widget.upgradeGain.toStringAsFixed(widget.upgradeGain.truncateToDouble() == widget.upgradeGain ? 1 : 2)}', // Показываем .0 если целое
+                            // Текст "Level Up"
+                            Positioned( top: 5, child: Text('Level Up', style: levelUpTextStyle) ),
+                            // Текст "+ Прирост"
+                            Positioned( bottom: 8, child: Text(
+                                '+${widget.upgradeGain.toStringAsFixed(widget.upgradeGain.truncateToDouble() == widget.upgradeGain ? 1 : 2)}',
                                 style: gainTextStyle,
                               ),
                             ),
@@ -163,7 +152,6 @@ class _UpgradeItemWidgetState extends State<UpgradeItemWidget> {
                       ),
                     ),
                   ),
-                  // ------------------------------------------------------
                 ],
               ),
             ),
@@ -173,4 +161,4 @@ class _UpgradeItemWidgetState extends State<UpgradeItemWidget> {
     );
   }
 }
-// END OF MODIFIED FILE underground_rap_clicker/lib/widgets/upgrade_item.dart
+// END OF CORRECTED FILE underground_rap_clicker/lib/widgets/upgrade_item.dart

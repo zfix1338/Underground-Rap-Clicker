@@ -160,7 +160,7 @@ class _MusicScreenState extends State<MusicScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Music Library'),
-        backgroundColor: colorScheme.surfaceVariant,
+        backgroundColor: colorScheme.surfaceContainerHighest,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
@@ -238,7 +238,7 @@ class _MusicScreenState extends State<MusicScreen> {
           if (_currentlyPlaying != null) // Показываем только если трек выбран
             Container(
                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-               color: colorScheme.surfaceVariant.withOpacity(0.8), // Полупрозрачный фон
+               color: colorScheme.surfaceContainerHighest.withOpacity(0.8), // Полупрозрачный фон
                child: Column(
                  mainAxisSize: MainAxisSize.min, // Занимать минимум места по вертикали
                  children: [
