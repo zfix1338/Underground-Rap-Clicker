@@ -9,7 +9,6 @@ const String clickableRapperPath = 'assets/images/clickable_rapper.png';
 const String cloutCoinPath = 'assets/images/clout_coin.png';
 // ------------------------------------------------------
 
-// --- Убедитесь, что класс называется ИМЕННО ТАК и наследуется от StatelessWidget ---
 class UpgradeScreen extends StatelessWidget {
   final int monthlyListeners;
   final int baseListenersPerClick;
@@ -18,7 +17,7 @@ class UpgradeScreen extends StatelessWidget {
   final VoidCallback onClick;
   final Function(int) onLevelUp;
 
-  // --- Убедитесь, что конструктор называется ТАК ЖЕ, как класс ---
+  // Конструктор с required параметрами
   const UpgradeScreen({
     super.key,
     required this.monthlyListeners,
@@ -28,11 +27,11 @@ class UpgradeScreen extends StatelessWidget {
     required this.onClick,
     required this.onLevelUp,
   });
-  // ----------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    // Стили для счетчиков
     final counterTextStyle = textTheme.bodyMedium?.copyWith(
       color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13,
       shadows: [ Shadow( blurRadius: 2.0, color: Colors.black.withOpacity(0.7), offset: const Offset(1.0, 1.0)) ]
@@ -47,11 +46,11 @@ class UpgradeScreen extends StatelessWidget {
       children: [
         // --- Верхняя секция ---
         Expanded(
-          flex: 5,
+          flex: 5, // Настройте соотношение по вкусу
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // Фоновое изображение
+              // Фоновое изображение (ограничено этой областью)
               Positioned.fill(
                 child: Image.asset( gameBackgroundPath, fit: BoxFit.cover, alignment: Alignment.topCenter ),
               ),
@@ -64,14 +63,17 @@ class UpgradeScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      // /tap
                       Row( mainAxisSize: MainAxisSize.min, children: [
                           const Icon(Icons.touch_app, color: Colors.white, size: 16), const SizedBox(width: 4),
                           Text('+${baseListenersPerClick}/tap', style: counterTextStyle),
                         ] ),
+                      // Общее кол-во
                       Row( mainAxisSize: MainAxisSize.min, children: [
                           Image.asset(cloutCoinPath, width: 24, height: 24), const SizedBox(width: 8),
                           Text(monthlyListeners.toString(), style: mainCounterStyle),
                         ] ),
+                      // /sec
                       Row( mainAxisSize: MainAxisSize.min, children: [
                           const Icon(Icons.timer, color: Colors.white, size: 16), const SizedBox(width: 4),
                           Text('+${passiveListenersPerSecond}/sec', style: counterTextStyle),
@@ -92,26 +94,36 @@ class UpgradeScreen extends StatelessWidget {
         ),
         // --- Нижняя секция (Список апгрейдов) ---
         Expanded(
-          flex: 6,
+          flex: 6, // Настройте соотношение по вкусу
           child: Container(
-            color: Colors.grey[850], // Серый фон для списка
+            width: double.infinity, // Занять всю ширину
+            color: Colors.grey[850], // Серый фон
             child: Padding(
               padding: const EdgeInsets.only(bottom: 5.0, left: 15.0, right: 15.0, top: 10.0),
-              child: ListView.builder(
-                itemCount: upgrades.length,
-                itemBuilder: (context, index) {
-                  final upgrade = upgrades[index];
-                  // Используем виджет UpgradeItemWidget
-                  return UpgradeItemWidget(
-                    key: ValueKey(upgrade.title + upgrade.level.toString()),
-                    title: upgrade.title,
-                    cost: upgrade.cost,
-                    currentLevel: upgrade.level,
-                    upgradeGain: upgrade.increment.toDouble(),
-                    currentClout: monthlyListeners,
-                    onUpgrade: () => onLevelUp(index),
+              child: LayoutBuilder( // Используем LayoutBuilder
+                builder: (context, constraints) {
+                  // Если список пустой, показываем заглушку
+                  if (upgrades.isEmpty) {
+                    return const Center(child: Text("No upgrades available.", style: TextStyle(color: Colors.white54)));
+                  }
+                  // Используем ListView.builder
+                  return ListView.builder(
+                    itemCount: upgrades.length,
+                    itemBuilder: (context, index) {
+                      final upgrade = upgrades[index];
+                      // Используем виджет UpgradeItemWidget
+                      return UpgradeItemWidget(
+                        key: ValueKey(upgrade.title + upgrade.level.toString()),
+                        title: upgrade.title,
+                        cost: upgrade.cost,
+                        currentLevel: upgrade.level,
+                        upgradeGain: upgrade.increment.toDouble(),
+                        currentClout: monthlyListeners,
+                        onUpgrade: () => onLevelUp(index),
+                      );
+                    },
                   );
-                },
+                }
               ),
             ),
           ),
