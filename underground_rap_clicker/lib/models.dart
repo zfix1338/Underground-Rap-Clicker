@@ -183,7 +183,7 @@ final Album blondeAlbum = Album(
   coverAsset: defaultAlbumCoverPath, // Обложка альбома
   tracks: [
     // Первый трек
-    Track( title: "Blonde", artist: defaultArtistName, duration: "2:19", cost: 1000, audioFile: 'audio/blonde.mp3', coverAsset: defaultAlbumCoverPath, ),
+    Track( title: "Blonde", artist: defaultArtistName, duration: "2:19", cost: 100, audioFile: 'audio/blonde.mp3', coverAsset: defaultAlbumCoverPath, ),
     // Новые треки
     Track( title: "For Da Flex", artist: defaultArtistName, duration: defaultTrackDuration, cost: 3000, audioFile: 'audio/For Da Flex.mp3', coverAsset: defaultAlbumCoverPath, ),
     Track( title: "All Star", artist: defaultArtistName, duration: defaultTrackDuration, cost: 10000, audioFile: 'audio/All Star.mp3', coverAsset: defaultAlbumCoverPath, ),
