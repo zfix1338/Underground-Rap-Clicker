@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 // --- Пути к ассетам ---
 const String upgradeRowBgPath = 'assets/images/upgrade_row_bg.png'; // Фон строки
 // const String upgradeButtonActivePath = 'assets/images/upgrade_button_active.png'; // Старый путь, не используется
-const String newLevelUpButtonPath = 'assets/images/level_up_button_new.png'; // <--- ПУТЬ К НОВОЙ КНОПКЕ ИЗ КАРТИНКИ
+const String newLevelUpButtonPath = 'assets/images/upgrade_button_active.png'; // <--- ПУТЬ К НОВОЙ КНОПКЕ ИЗ КАРТИНКИ
 const String cloutCoinPath = 'assets/images/clout_coin.png'; // Иконка валюты
 // ---------------------
 

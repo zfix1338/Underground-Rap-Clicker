@@ -84,9 +84,12 @@ class AlbumDetailScreenState extends State<AlbumDetailScreen> {
   // Проверка, играет ли что-то при входе на экран (на случай фонового воспроизведения)
   Future<void> _checkCurrentlyPlaying() async {
      // Определяем индекс играющего трека (если есть)
-     // Вам нужно реализовать логику определения _currentlyPlayingTrackPath
-     // в вашем основном стейт-менеджере или передавать эту информацию
-     String? _currentlyPlayingTrackPath = await widget.audioPlayer.getCurrentAssetPath(); // Примерный метод
+     // Получаем текущий источник трека, если это AssetSource
+     String? _currentlyPlayingTrackPath;
+     final currentSource = widget.audioPlayer.source;
+     if (currentSource is AssetSource) {
+       _currentlyPlayingTrackPath = currentSource.asset;
+     }
 
      if (_currentlyPlayingTrackPath != null) {
         final index = widget.album.tracks.indexWhere((t) => t.audioFile == _currentlyPlayingTrackPath.replaceFirst('assets/', ''));

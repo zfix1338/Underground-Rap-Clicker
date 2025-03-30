@@ -1,5 +1,4 @@
 // START OF FULL REVISED FILE: lib/models.dart
-import 'dart:math'; // Понадобится для расчета стоимости/прироста, если захотите вернуть формулы
 
 // --- Класс Апгрейда (из вашего файла) ---
 class UpgradeItem {
