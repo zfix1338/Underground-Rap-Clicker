@@ -25,6 +25,22 @@ flutter:
 
   assets:
     - assets/audio/blonde.mp3
+    - assets/audio/For Da Flex.mp3
+    - assets/audio/All Star.mp3
+    - assets/audio/Baghdad.mp3
+    - assets/audio/Congrats.mp3
+    - assets/audio/Talking 2 A Ghost.mp3
+    - assets/audio/Pop.mp3
+    - assets/audio/Str8 Flexin.mp3
+    - assets/audio/Me When.mp3
+    - assets/audio/Uno.mp3
+    - assets/audio/Kills.mp3
+    - assets/audio/Kome Thru.mp3
+    - assets/audio/Boss Up.mp3
+    - assets/audio/3x.mp3
+    - assets/audio/Worst Part.mp3
+    - assets/audio/Trenches.mp3
+    - assets/audio/Nothing.mp3
     - assets/images/blonde_cover.png
     - assets/images/game_background.png # Убедитесь, что все ассеты перечислены
     - assets/images/clickable_rapper.png
