@@ -1,0 +1,458 @@
+// START OF FULL REVISED FILE: lib/screens/album_detail_screen.dart
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models.dart'; // Убедитесь, что путь к моделям правильный
+
+// Импорты для AssetSource и UrlSource
+import 'package:audioplayers/audioplayers.dart' show AssetSource, UrlSource;
+
+class AlbumDetailScreen extends StatefulWidget {
+  final Album album;                     // Альбом с треками
+  final AudioPlayer audioPlayer;         // Экземпляр плеера (передается извне)
+  final int monthlyListeners;          // Текущее кол-во слушателей (для проверки покупки)
+  final Function(int cost)? onSpend;   // Функция для списания валюты при покупке
+  final Function()? onTrackUpdate;     // Колбэк для обновления UI на предыдущем экране (если нужно)
+
+  const AlbumDetailScreen({
+    super.key, // Используем super.key
+    required this.album,
+    required this.audioPlayer,
+    required this.monthlyListeners,
+    this.onSpend,
+    this.onTrackUpdate,
+  });
+
+  @override
+  AlbumDetailScreenState createState() => AlbumDetailScreenState();
+}
+
+class AlbumDetailScreenState extends State<AlbumDetailScreen> {
+  int _currentPlayingIndex = -1;     // Индекс трека, который сейчас играет или должен играть
+  Duration _currentPosition = Duration.zero; // Текущая позиция воспроизведения
+  Duration _totalDuration = Duration.zero;   // Общая длительность текущего трека
+  bool _isLoading = false;             // Флаг загрузки аудио
+  double _sliderValue = 0;             // Значение для слайдера (при перетаскивании)
+  bool _isDragging = false;            // Флаг перетаскивания слайдера
+
+  // Ключ для сохранения купленных треков в SharedPreferences
+  static const String _purchasedTracksPrefKey = 'purchasedTracks';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPurchasedTracks(); // Загружаем состояние купленных треков при запуске
+    _setupAudioPlayerListeners(); // Настраиваем слушатели плеера
+    _checkCurrentlyPlaying(); // Проверяем, не играет ли уже что-то при входе на экран
+  }
+
+  // Настройка слушателей событий плеера
+  void _setupAudioPlayerListeners() {
+    widget.audioPlayer.onPositionChanged.listen((pos) {
+      if (mounted && !_isDragging && widget.audioPlayer.state == PlayerState.playing) {
+        setState(() {
+          _currentPosition = pos;
+          // Обновляем значение слайдера только если не перетаскиваем
+          if (!_isDragging) {
+            _sliderValue = pos.inSeconds.toDouble().clamp(0.0, _totalDuration.inSeconds.toDouble());
+          }
+        });
+      }
+    });
+
+    widget.audioPlayer.onDurationChanged.listen((dur) {
+      if (mounted && dur > Duration.zero) { // Игнорируем нулевую длительность
+        setState(() {
+          _totalDuration = dur;
+        });
+      }
+    });
+
+    widget.audioPlayer.onPlayerStateChanged.listen((state) {
+      if (!mounted) return;
+      // Если воспроизведение завершилось или было остановлено
+      if (state == PlayerState.completed || state == PlayerState.stopped) {
+        _handleTrackEnd();
+      } else {
+        // Обновляем UI при других изменениях состояния (например, пауза, возобновление)
+        setState(() {});
+      }
+    });
+  }
+
+  // Проверка, играет ли что-то при входе на экран (на случай фонового воспроизведения)
+  Future<void> _checkCurrentlyPlaying() async {
+     // Определяем индекс играющего трека (если есть)
+     // Вам нужно реализовать логику определения _currentlyPlayingTrackPath
+     // в вашем основном стейт-менеджере или передавать эту информацию
+     String? _currentlyPlayingTrackPath = await widget.audioPlayer.getCurrentAssetPath(); // Примерный метод
+
+     if (_currentlyPlayingTrackPath != null) {
+        final index = widget.album.tracks.indexWhere((t) => t.audioFile == _currentlyPlayingTrackPath.replaceFirst('assets/', ''));
+        if (index != -1) {
+           _currentPlayingIndex = index;
+           // Запросим текущую позицию и длительность
+           try {
+              final pos = await widget.audioPlayer.getCurrentPosition() ?? Duration.zero;
+              final dur = await widget.audioPlayer.getDuration() ?? Duration.zero;
+              if (mounted) {
+                 setState(() {
+                    _currentPosition = pos;
+                    _totalDuration = dur;
+                    _sliderValue = pos.inSeconds.toDouble().clamp(0.0, dur.inSeconds.toDouble());
+                 });
+              }
+           } catch (e) { print("Error getting initial position/duration: $e"); }
+        }
+     }
+  }
+
+
+  // Загрузка списка идентификаторов купленных треков
+  Future<void> _loadPurchasedTracks() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Используем заданный ключ
+      final purchasedIds = prefs.getStringList(_purchasedTracksPrefKey) ?? [];
+      if (!mounted) return; // Проверка на mounted после await
+      setState(() {
+        for (var track in widget.album.tracks) {
+          // Устанавливаем состояние покупки на основе загруженных данных
+          track.isPurchased = purchasedIds.contains(track.title); // Используем title как идентификатор
+        }
+      });
+    } catch (e) {
+      print("Error loading purchased tracks: $e");
+      // Можно показать SnackBar об ошибке
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Error loading track purchase status."))
+        );
+      }
+    }
+  }
+
+  // Сохранение идентификатора купленного трека
+  Future<void> _savePurchasedTrack(String trackIdentifier) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Используем тот же ключ
+      final purchasedIds = prefs.getStringList(_purchasedTracksPrefKey) ?? [];
+      if (!purchasedIds.contains(trackIdentifier)) {
+        purchasedIds.add(trackIdentifier);
+        await prefs.setStringList(_purchasedTracksPrefKey, purchasedIds);
+      }
+    } catch (e) {
+      print("Error saving purchased track: $e");
+      if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Error saving purchase status."))
+        );
+      }
+    }
+  }
+
+  // Обработка завершения или остановки трека
+  void _handleTrackEnd() {
+    if (!mounted) return;
+    setState(() {
+      _currentPlayingIndex = -1;
+      _currentPosition = Duration.zero;
+      _totalDuration = Duration.zero;
+      _sliderValue = 0;
+    });
+    widget.onTrackUpdate?.call(); // Уведомляем предыдущий экран, если нужно
+  }
+
+  // Запуск воспроизведения нового трека
+  Future<void> _startTrackPlayback(int index) async {
+    if (_isLoading) return;
+    final track = widget.album.tracks[index];
+    if (!track.isPurchased) return; // Не запускаем не купленный трек
+
+    setState(() { _isLoading = true; });
+
+    try {
+      // Останавливаем предыдущий трек, если он играл
+      if (widget.audioPlayer.state == PlayerState.playing || widget.audioPlayer.state == PlayerState.paused) {
+        await widget.audioPlayer.stop();
+      }
+
+      // Устанавливаем источник и запускаем
+      // Для веб используем UrlSource, для остальных AssetSource
+      final source = kIsWeb ? UrlSource('assets/${track.audioFile}') : AssetSource(track.audioFile);
+      await widget.audioPlayer.setSource(source);
+      await widget.audioPlayer.resume(); // Запускаем воспроизведение
+
+      if (!mounted) return; // Проверка после асинхронных операций
+      setState(() {
+        _currentPlayingIndex = index; // Запоминаем индекс играющего трека
+        _isLoading = false;
+        _currentPosition = Duration.zero; // Сброс позиции для нового трека
+        // Длительность обновится через слушатель onDurationChanged
+      });
+      widget.onTrackUpdate?.call();
+    } catch (e) {
+      print("Error starting playback: $e");
+      if (!mounted) return;
+      setState(() { _isLoading = false; });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Playback error: $e")));
+      _handleTrackEnd(); // Сброс состояния при ошибке
+    }
+  }
+
+  // Переключение между Play и Pause для текущего трека
+  Future<void> _togglePlayPause(int index) async {
+    if (_isLoading) return;
+    final track = widget.album.tracks[index];
+    if (!track.isPurchased) return; // Нельзя управлять не купленным треком
+
+    try {
+      // Если плеер сейчас играет И это тот самый трек
+      if (widget.audioPlayer.state == PlayerState.playing && _currentPlayingIndex == index) {
+        await widget.audioPlayer.pause();
+      }
+      // Если плеер на паузе И это тот самый трек
+      else if (widget.audioPlayer.state == PlayerState.paused && _currentPlayingIndex == index) {
+        await widget.audioPlayer.resume();
+      }
+      // Если выбран другой трек или плеер остановлен
+      else {
+        await _startTrackPlayback(index);
+      }
+       // Обновляем UI через слушатель onPlayerStateChanged
+       // setState(() {}); // Не обязательно здесь, т.к. сработает слушатель
+      widget.onTrackUpdate?.call();
+    } catch (e) {
+      print("Error toggling play/pause: $e");
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Toggle error: $e")));
+    }
+  }
+
+  // Покупка трека
+  Future<void> _purchaseTrack(int index) async {
+    final track = widget.album.tracks[index];
+    if (widget.monthlyListeners < track.cost) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Not enough clout to purchase!"))
+      );
+      return;
+    }
+
+    // Вызываем функцию списания, если она передана
+    widget.onSpend?.call(track.cost);
+
+    if (!mounted) return; // Проверка после await (если onSpend асинхронный)
+
+    // Обновляем состояние трека и UI
+    setState(() {
+      track.isPurchased = true;
+    });
+
+    // Сохраняем статус покупки
+    await _savePurchasedTrack(track.title);
+
+    widget.onTrackUpdate?.call(); // Уведомляем, если нужно
+  }
+
+  // Форматирование длительности в строку MM:SS
+  String _formatDuration(Duration d) {
+    if (d == Duration.zero) return '0:00'; // Возвращаем 0:00 для нулевой длительности
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final minutes = twoDigits(d.inMinutes.remainder(60));
+    final seconds = twoDigits(d.inSeconds.remainder(60));
+    return "$minutes:$seconds";
+  }
+
+  @override
+  void dispose() {
+    // Хотя плеер управляется извне, можно остановить воспроизведение при выходе с экрана
+    // widget.audioPlayer.stop(); // Раскомментируйте, если хотите останавливать музыку при выходе
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Рассчитываем максимальное значение для слайдера
+    double maxSliderValue = _totalDuration.inSeconds > 0 ? _totalDuration.inSeconds.toDouble() : 1.0;
+    // Рассчитываем текущее отображаемое значение слайдера
+    double displaySliderValue = (_isDragging ? _sliderValue : _currentPosition.inSeconds.toDouble()).clamp(0.0, maxSliderValue);
+
+    return Scaffold(
+      backgroundColor: Colors.grey[900], // Более темный фон
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          widget.album.title,
+          style: const TextStyle( color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold ),
+        ),
+        backgroundColor: Colors.black87, // AppBar темнее
+        elevation: 4,
+      ),
+      body: ListView.builder(
+        itemCount: widget.album.tracks.length, // Количество треков в альбоме
+        itemBuilder: (context, index) {
+          final track = widget.album.tracks[index]; // Получаем текущий трек
+
+          // Определяем, играет ли именно этот трек
+          bool isThisTrackPlaying = widget.audioPlayer.state == PlayerState.playing && _currentPlayingIndex == index;
+          bool isThisTrackPaused = widget.audioPlayer.state == PlayerState.paused && _currentPlayingIndex == index;
+
+          String statusText;
+          IconData actionIcon;
+
+          if (!track.isPurchased) {
+            statusText = "Cost: ${track.cost}";
+            actionIcon = Icons.shopping_cart; // Иконка покупки
+          } else if (isThisTrackPlaying) {
+            statusText = "Playing";
+            actionIcon = Icons.pause;
+          } else if (isThisTrackPaused) {
+            statusText = "Paused";
+            actionIcon = Icons.play_arrow;
+          } else {
+            statusText = "Purchased"; // Статус после покупки, если не играет и не на паузе
+            actionIcon = Icons.play_arrow;
+          }
+
+          return Padding( // Добавляем отступ вокруг каждого элемента
+            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+            child: Container(
+              padding: const EdgeInsets.all(12.0),
+              decoration: BoxDecoration(
+                color: Colors.grey[850], // Фон элемента
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [ // Небольшая тень
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              ),
+              child: Column( // Используем Column для строки и слайдера
+                children: [
+                  Row(
+                    children: [
+                      // Обложка трека
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          track.coverAsset, // Используем обложку трека
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          // Обработка ошибки загрузки изображения (опционально)
+                          errorBuilder: (context, error, stackTrace) {
+                             return Container(width: 60, height: 60, color: Colors.grey[700], child: const Icon(Icons.music_note, color: Colors.white54));
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12), // Увеличенный отступ
+
+                      // Информация о треке
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              track.title,
+                              style: const TextStyle( color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, ),
+                              maxLines: 1, overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              track.artist,
+                              style: const TextStyle( color: Colors.white70, fontSize: 14, ),
+                               maxLines: 1, overflow: TextOverflow.ellipsis,
+                            ),
+                             const SizedBox(height: 4),
+                            Text(
+                              track.duration,
+                              style: const TextStyle( color: Colors.white60, fontSize: 13, ),
+                            ),
+                            const SizedBox(height: 4),
+                            // Статус трека
+                            Text(
+                              statusText,
+                              style: TextStyle(
+                                color: isThisTrackPlaying ? Colors.orangeAccent : Colors.grey[400], // Цвет статуса
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+
+                      // Кнопка действия (Купить / Играть / Пауза)
+                      if (!track.isPurchased)
+                        // Кнопка покупки
+                        ElevatedButton.icon(
+                           icon: Icon(actionIcon, size: 18),
+                           label: Text("(${track.cost})"),
+                           onPressed: () => _purchaseTrack(index),
+                           style: ElevatedButton.styleFrom(
+                             backgroundColor: Colors.deepOrangeAccent, // Яркий цвет для покупки
+                             foregroundColor: Colors.white,
+                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                             textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                           ),
+                         )
+                      else
+                        // Кнопка Play/Pause
+                        IconButton(
+                           icon: _isLoading && _currentPlayingIndex == index
+                               ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                               : Icon(actionIcon, color: Colors.white, size: 32), // Иконка Play/Pause
+                           onPressed: () => _togglePlayPause(index), // Вызов функции Play/Pause
+                           tooltip: isThisTrackPlaying ? 'Pause' : 'Play', // Подсказка
+                         ),
+                    ],
+                  ),
+
+                  // Слайдер и время (показываются только если трек играет)
+                  if (isThisTrackPlaying && _totalDuration > Duration.zero) ...[
+                    const SizedBox(height: 10),
+                    SliderTheme( // Стилизация слайдера
+                      data: SliderTheme.of(context).copyWith(
+                        activeTrackColor: Colors.orangeAccent,
+                        inactiveTrackColor: Colors.grey[700],
+                        thumbColor: Colors.orange,
+                        overlayColor: Colors.orange.withOpacity(0.3),
+                        trackHeight: 3.0,
+                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7.0),
+                        overlayShape: const RoundSliderOverlayShape(overlayRadius: 15.0),
+                      ),
+                      child: Slider(
+                        min: 0,
+                        max: maxSliderValue, // Максимальное значение = длительность трека
+                        value: displaySliderValue, // Текущее значение
+                        // Вызывается при перетаскивании
+                        onChanged: (value) {
+                          setState(() {
+                            _isDragging = true;
+                            _sliderValue = value;
+                            // Обновляем текст текущей позиции во время перетаскивания
+                            _currentPosition = Duration(seconds: value.round());
+                          });
+                        },
+                        // Вызывается при завершении перетаскивания
+                        onChangeEnd: (value) async {
+                          if (!mounted) return;
+                           setState(() { _isDragging = false; });
+                          try {
+                            final newPos = Duration(seconds: value.round());
+                            await widget.audioPlayer.seek(newPos); // Перематываем плеер
+                            // Позиция обновится через слушатель onPositionChanged
+                          } catch (e) {
+                            print("Seek error: $e");
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Seek error: $e")
