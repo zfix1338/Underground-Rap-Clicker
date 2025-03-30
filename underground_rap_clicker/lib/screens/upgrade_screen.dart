@@ -89,7 +89,7 @@ class UpgradeScreen extends StatelessWidget {
                       Row( mainAxisSize: MainAxisSize.min, children: [
                           const Icon(Icons.touch_app, color: Colors.white, size: 16),
                           const SizedBox(width: 4),
-                          Text('+${baseListenersPerClick}/tap', style: counterTextStyle),
+                          Text('+$baseListenersPerClick/tap', style: counterTextStyle),
                       ]),
                       // Главный счетчик (слушатели)
                       Row( mainAxisSize: MainAxisSize.min, children: [
@@ -101,7 +101,7 @@ class UpgradeScreen extends StatelessWidget {
                       Row( mainAxisSize: MainAxisSize.min, children: [
                           const Icon(Icons.timer, color: Colors.white, size: 16),
                           const SizedBox(width: 4),
-                          Text('+${passiveListenersPerSecond}/sec', style: counterTextStyle),
+                          Text('+$passiveListenersPerSecond/sec', style: counterTextStyle),
                       ]),
                     ],
                   ),
